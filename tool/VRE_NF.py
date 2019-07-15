@@ -65,6 +65,8 @@ class WF_RUNNER(Tool):
     
     MASKED_KEYS = { 'execution', 'project', 'description', 'nextflow_repo_uri', 'nextflow_repo_tag' }
     
+    MASKED_OUT_KEYS = { 'metrics', 'tar_view', 'tar_nf_stats', 'tar_other' }
+    
     IMG_FILE_TYPES = {
         'png',
         'svg',
@@ -141,6 +143,7 @@ class WF_RUNNER(Tool):
             configuration = {}
 
         self.configuration.update(configuration)
+        self.populable_outputs = {}
 
     def doMaterializeRepo(self, git_uri, git_tag):
         repo_hashed_id = hashlib.sha1(git_uri).hexdigest()
@@ -312,6 +315,9 @@ class WF_RUNNER(Tool):
             ('otherdir',other_loc)
         ]
         
+        # The list of populable outputs
+        variable_outfile_params.extend(self.populable_outputs.items())
+        
         # Preparing the RO volumes
         for ro_loc_id,ro_loc_val in variable_infile_params:
             volumes.append((ro_loc_val,"ro,Z"))
@@ -365,6 +371,17 @@ class WF_RUNNER(Tool):
         output_metadata : dict
             List of matching metadata for the returned files
         """
+        
+        
+        for key in output_files.keys():
+            if (key not in self.MASKED_OUT_KEYS) and (output_files[key] is not None):
+                pop_output_path = os.path.abspath(output_files[key])
+                # Forcing the creation of the file
+                with open(pop_output_path,mode="a") as pop_output_h:
+                    pass
+                self.populable_outputs[key] = pop_output_path
+                output_files[key] = pop_output_path
+        
         project_path = os.path.abspath(self.configuration.get('project','.'))
         participant_id = self.configuration['participant_id']
         
@@ -518,5 +535,15 @@ class WF_RUNNER(Tool):
         
         # Adding the additional interesting files
         output_metadata.update(images_metadata)
-
+        
+        # And adding "fake" entries for the other output files
+        for pop_key, pop_path in self.populable_outputs.items():
+            output_metadata[pop_key] = Metadata(
+                file_path = pop_path,
+                sources=[input_metadata["input"].file_path],
+                meta_data={
+                    "tool": "VRE_NF_RUNNER"
+                }
+            )
+        
         return (output_files, output_metadata)
