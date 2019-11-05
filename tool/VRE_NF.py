@@ -236,7 +236,7 @@ class WF_RUNNER(Tool):
             logger.fatal("While materializing repo: "+type(error).__name__ + ': '+str(error))
             return False
         
-        event_id = self.configuration['event_id']
+        challenges_ids = self.configuration['challenges_ids']
         participant_id = self.configuration['participant_id']
         
         inputDir = os.path.dirname(input_loc)
@@ -294,7 +294,7 @@ class WF_RUNNER(Tool):
         
         # Parameters which are not input or output files are in the configuration
         variable_params = [
-        #    ('event_id',event_id),
+        #    ('challenges_ids',challenges_ids),
         #    ('participant_id',participant_id)
         ]
         for conf_key in self.configuration.keys():
