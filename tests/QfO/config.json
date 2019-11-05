@@ -1,0 +1,156 @@
+{
+    "input_files": [
+        {
+            "name": "input",
+            "value": "OpEBUSER5cc02033c429d_5cfa242b7b85c0.96805689",
+            "required": true,
+            "allow_multiple": false
+        },
+        {
+            "name": "goldstandard_dir",
+            "value": "OpEBUSER5cc02033c429d_5d0357aad8b012.32264679_dummy",
+            "required": true,
+            "allow_multiple": false
+        },
+        {
+            "name": "assess_dir",
+            "value": "OpEBUSER5cc02033c429d_5d0357aad8b974.28339324_dummy",
+            "required": true,
+            "allow_multiple": false
+        },
+        {
+            "name": "public_ref_dir",
+            "value": "OpEBUSER5cc02033c429d_5d0357aad8c180.12103256_dummy",
+            "required": true,
+            "allow_multiple": false
+        }
+    ],
+    "arguments": [
+        {
+            "name": "execution",
+            "value": "QfO-test"
+        },
+        {
+            "name": "project",
+            "value": "QfO-test"
+        },
+        {
+            "name": "description",
+            "value": "Test run"
+        },
+        {
+            "name": "nextflow_repo_uri",
+            "value": "https://github.com/javi-gv94/benchmark-webservice"
+        },
+        {
+            "name": "nextflow_repo_tag",
+            "value": "2ee74fca4b1da48797af0b554d2011e441b39d6e"
+        },
+        {
+            "name": "community_id",
+            "value": "OEBC002"
+        },
+        {
+            "name": "challenges_ids",
+            "value": "GO EC SwissTrees"
+        },
+        {
+            "name": "participant_id",
+            "value": "MY_ORTHOLOG_PREDICTOR"
+        }
+    ],
+    "output_files": [
+        {
+            "name": "assessment_results",
+            "required": true,
+            "allow_multiple": false,
+            "file": {
+                "file_type": "JSON",
+                "file_path": "QfO-test/Assessment_datasets.json",
+                "data_type": "assessment",
+                "compressed": "null",
+                "meta_data": {
+                    "description": "Metrics derivated from the given input data",
+                    "tool": "QfO_2018",
+                    "visible": true
+                }
+            }
+        },
+        {
+            "name": "data_model_export_dir",
+            "required": true,
+            "allow_multiple": false,
+            "file": {
+                "file_type": "JSON",
+                "file_path": "QfO-test/consolidated_results.json",
+                "data_type": "consolidated_benchmark_dataset",
+                "compressed": "null",
+                "meta_data": {
+                    "description": "Aggregation of minimal datasets ready to be used by the OEB pushing tool",
+                    "tool": "QfO_2018",
+                    "visible": true
+                }
+            }
+        },
+        {
+            "name": "tar_view",
+            "required": true,
+            "allow_multiple": false,
+            "custom_visualizer": true,
+            "file": {
+                "file_type": "TAR",
+                "data_type": "tool_statistics",
+                "compressed": "gzip",
+                "meta_data": {
+                    "description": "Data for metrics visualizer",
+                    "tool": "QfO_2018",
+                    "visible": false
+                }
+            }
+        },
+        {
+            "name": "tar_nf_stats",
+            "required": false,
+            "allow_multiple": false,
+            "file": {
+                "file_type": "TAR",
+                "data_type": "configuration_file",
+                "compressed": "gzip",
+                "meta_data": {
+                    "description": "Execution monitoring and logging data",
+                    "tool": "QfO_2018",
+                    "visible": true
+                }
+            }
+        },
+        {
+            "name": "tar_other",
+            "required": false,
+            "allow_multiple": false,
+            "file": {
+                "file_type": "TAR",
+                "data_type": "configuration_file",
+                "compressed": "gzip",
+                "meta_data": {
+                    "description": "Other execution associated data",
+                    "tool": "QfO_2018",
+                    "visible": true
+                }
+            }
+        },
+        {
+            "name": "report_images",
+            "required": false,
+            "allow_multiple": true,
+            "file": {
+                "file_type": "IMG",
+                "data_type": "report_image",
+                "meta_data": {
+                    "description": "Execution monitoring and logging images",
+                    "tool": "QfO_2018",
+                    "visible": true
+                }
+            }
+        }
+    ]
+}

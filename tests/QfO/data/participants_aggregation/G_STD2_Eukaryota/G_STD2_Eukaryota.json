@@ -1,0 +1,144 @@
+{
+    "_id": "QfO:G_STD2_Eukaryota_agg",
+    "challenge_ids": [
+        "G_STD2_Eukaryota"
+    ],
+    "datalink": {
+        "inline_data": {
+            "challenge_participants": [
+                {
+                    "metric_x": 1063,
+                    "metric_y": 0.20225776,
+                    "participant_id": "OMA_Groups",
+                    "stderr_x": 63.220274,
+                    "stderr_y": 0.0097301626
+                },
+                {
+                    "metric_x": 3133,
+                    "metric_y": 0.23042857,
+                    "participant_id": "BBH",
+                    "stderr_x": 106.21475,
+                    "stderr_y": 0.0061617689
+                },
+                {
+                    "metric_x": 7115,
+                    "metric_y": 0.29080952,
+                    "participant_id": "Ensembl_Compara",
+                    "stderr_x": 153.1127,
+                    "stderr_y": 0.0071016619
+                },
+                {
+                    "metric_x": 3385,
+                    "metric_y": 0.22614286,
+                    "participant_id": "Hieranoid2",
+                    "stderr_x": 110.10657,
+                    "stderr_y": 0.0061359848
+                },
+                {
+                    "metric_x": 3707,
+                    "metric_y": 0.2177619,
+                    "participant_id": "InParanoid",
+                    "stderr_x": 114.82594,
+                    "stderr_y": 0.0061309307
+                },
+                {
+                    "metric_x": 3536,
+                    "metric_y": 0.24057143,
+                    "participant_id": "OMA_GETHOGs_2.0",
+                    "stderr_x": 112.35321,
+                    "stderr_y": 0.0064823036
+                },
+                {
+                    "metric_x": 1052,
+                    "metric_y": 0.211434,
+                    "participant_id": "OMA_Groups_2.0",
+                    "stderr_x": 62.899387,
+                    "stderr_y": 0.010118358
+                },
+                {
+                    "metric_x": 2397,
+                    "metric_y": 0.21860659,
+                    "participant_id": "OMA_Pairs_2.0",
+                    "stderr_x": 93.631558,
+                    "stderr_y": 0.0068530744
+                },
+                {
+                    "metric_x": 5815,
+                    "metric_y": 0.24285714,
+                    "participant_id": "OrthoFinder_2_BLAST__DendroBLAST_",
+                    "stderr_x": 140.50228,
+                    "stderr_y": 0.0062741844
+                },
+                {
+                    "metric_x": 5983,
+                    "metric_y": 0.25271429,
+                    "participant_id": "OrthoFinder_2_BLAST__MSA",
+                    "stderr_x": 142.24624,
+                    "stderr_y": 0.0064906963
+                },
+                {
+                    "metric_x": 5307,
+                    "metric_y": 0.24071429,
+                    "participant_id": "OrthoFinder_2_Defaults_DIAMOND__MSA",
+                    "stderr_x": 134.99428,
+                    "stderr_y": 0.0063524536
+                },
+                {
+                    "metric_x": 5714,
+                    "metric_y": 0.23566667,
+                    "participant_id": "OrthoFinder_2_DIAMOND__MSA",
+                    "stderr_x": 139.43584,
+                    "stderr_y": 0.0062385003
+                },
+                {
+                    "metric_x": 5368,
+                    "metric_y": 0.2322381,
+                    "participant_id": "OrthoInspector_3.0",
+                    "stderr_x": 135.67521,
+                    "stderr_y": 0.0062075469
+                },
+                {
+                    "metric_x": 5558,
+                    "metric_y": 0.25833333,
+                    "participant_id": "PANTHER_14.1_all",
+                    "stderr_x": 137.76127,
+                    "stderr_y": 0.0067358859
+                },
+                {
+                    "metric_x": 3518,
+                    "metric_y": 0.23333333,
+                    "participant_id": "PANTHER_14.1_LDO_only",
+                    "stderr_x": 112.08859,
+                    "stderr_y": 0.0061949205
+                },
+                {
+                    "metric_x": 2282,
+                    "metric_y": 0.25065732,
+                    "participant_id": "RSD",
+                    "stderr_x": 91.468173,
+                    "stderr_y": 0.0076352526
+                },
+                {
+                    "metric_x": 3764,
+                    "metric_y": 0.221,
+                    "participant_id": "SonicParanoid_default",
+                    "stderr_x": 115.63412,
+                    "stderr_y": 0.0060270313
+                },
+                {
+                    "metric_x": 4895,
+                    "metric_y": 0.22761905,
+                    "participant_id": "SonicParanoid_most",
+                    "stderr_x": 130.24461,
+                    "stderr_y": 0.0061150095
+                }
+            ],
+            "visualization": {
+                "type": "2D-plot",
+                "x_axis": "NR_COMPLETED_TREE_SAMPLINGS",
+                "y_axis": "RF_DISTANCE"
+            }
+        }
+    },
+    "type": "aggregation"
+}
