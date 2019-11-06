@@ -1,0 +1,66 @@
+[
+	{
+		"user_id": "OpEBUSER5cc02033c429d",
+		"data_type": "participant",
+		"file_type": "GZIP",
+		"creation_time": {
+			"usec": 0,
+			"sec": 1559897133
+		},
+		"sources": [],
+		"meta_data": {
+			"validated": 1,
+			"description": "List of predicted cancer driver genes to evaluate",
+			"project": "__PROJ5cc02033c42ac2.76881915",
+			"visible": true,
+			"parentDir": "/gpfs/vre-dev/userdata/OpEBUSER5cc02033c429d/OpEBUSER5cc02033c429d/__PROJ5cc02033c42ac2.76881915/uploads",
+			"expiration": {
+				"usec": 0,
+				"sec": 1575621933
+			},
+			"taxon_id": 0,
+			"atime": {
+				"usec": 0,
+				"sec": 1559897197
+			},
+			"size": 500
+		},
+		"compressed": 0,
+		"taxon_id": -1,
+		"_id": "OpEBUSER5cc02033c429d_5cfa242b7b85c0.96805689",
+		"file_path": "tests/TCGA/TCGA_full_data/example_input.txt"
+	},
+	{
+		"user_id": "public",
+		"data_type": "metrics_reference",
+		"file_type": "TAR",
+		"sources": [],
+		"meta_data": [],
+		"taxon_id": -1,
+		"_id": "OpEBUSER5cc02033c429d_5d0357aad8b012.32264679_dummy",
+		"type": "dir",
+		"file_path": "tests/TCGA/TCGA_full_data/metrics_ref_datasets"
+	},
+	{
+		"user_id": "public",
+		"data_type": "aggregation",
+		"file_type": "TAR",
+		"sources": [],
+		"meta_data": [],
+		"taxon_id": -1,
+		"_id": "OpEBUSER5cc02033c429d_5d0357aad8b974.28339324_dummy",
+		"type": "dir",
+		"file_path": "tests/TCGA/TCGA_full_data/data"
+	},
+	{
+		"user_id": "public",
+		"data_type": "public_reference",
+		"file_type": "TAR",
+		"sources": [],
+		"meta_data": [],
+		"taxon_id": -1,
+		"_id": "OpEBUSER5cc02033c429d_5d0357aad8c180.12103256_dummy",
+		"type": "dir",
+		"file_path": "tests/TCGA/TCGA_full_data/public_ref"
+	}
+]
