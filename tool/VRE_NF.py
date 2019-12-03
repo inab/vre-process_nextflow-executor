@@ -265,6 +265,7 @@ class WF_RUNNER(Tool):
         validation_cmd_pre_vol = [
             "docker", "run", "--rm", "--net", "host",
             "-e", "USER",
+            "-e", "NXF_DEBUG",
             "-e", "HOME="+homedir,
             "-e", "NXF_ASSETS="+nxf_assets_dir,
             "-e", "NXF_USRMAP="+uid,
