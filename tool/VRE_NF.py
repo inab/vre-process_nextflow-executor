@@ -29,6 +29,8 @@ import io
 
 import hashlib
 
+import uuid
+
 from utils import logger
 
 try:
@@ -374,16 +376,20 @@ class WF_RUNNER(Tool):
         """
         
         
+        project_path = os.path.abspath(self.configuration.get('project','.'))
         for key in output_files.keys():
-            if (key not in self.MASKED_OUT_KEYS) and (output_files[key] is not None):
-                pop_output_path = os.path.abspath(output_files[key])
+            if key not in self.MASKED_OUT_KEYS:
+                if output_files[key] is not None:
+                    pop_output_path = os.path.abspath(output_files[key])
+                else:
+                    pop_output_path = os.path.join(project_path,uuid.uuid4().hex + '.out')
+                
                 # Forcing the creation of the file
                 with open(pop_output_path,mode="a") as pop_output_h:
                     pass
                 self.populable_outputs[key] = pop_output_path
                 output_files[key] = pop_output_path
         
-        project_path = os.path.abspath(self.configuration.get('project','.'))
         participant_id = self.configuration['participant_id']
         
         metrics_path = output_files.get("metrics")
