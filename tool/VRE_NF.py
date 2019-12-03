@@ -384,6 +384,11 @@ class WF_RUNNER(Tool):
                 else:
                     pop_output_path = os.path.join(project_path,uuid.uuid4().hex + '.out')
                 
+                # Ensuring the parent directory already exists
+                pop_output_parent_dir = os.path.dirname(pop_output_path)
+                if not os.path.isdir(pop_output_parent_dir):
+                    os.makedirs(pop_output_parent_dir)
+                
                 # Forcing the creation of the file
                 with open(pop_output_path,mode="a") as pop_output_h:
                     pass
