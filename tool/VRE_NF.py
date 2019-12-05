@@ -145,6 +145,11 @@ class WF_RUNNER(Tool):
             configuration = {}
 
         self.configuration.update(configuration)
+        # Arrays are serialized
+        for k,v in self.configuration.items():
+            if isinstance(v,list):
+                self.configuration[k] = ' '.join(v)
+        
         self.populable_outputs = {}
 
     def doMaterializeRepo(self, git_uri, git_tag):
