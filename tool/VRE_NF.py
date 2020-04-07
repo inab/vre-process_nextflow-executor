@@ -253,12 +253,14 @@ class WF_RUNNER(Tool):
         uid = str(os.getuid())
         gid = str(os.getgid())
         
-        # Should workdir be in a separate place?
-        workdir = os.path.abspath(self.configuration.get('project','.'))
+        # Temporary directory is removed at the end
+        # being compressed to an archive
+        workdir = tempfile.mkdtemp(prefix="vre-",suffix="-job")
+        dest_workdir_archive = os.path.join(os.path.abspath(self.configuration.get('project','.')),'nf-workdir.tar.gz')
         
         # Directories required by Nextflow in a Docker
         homedir = os.path.expanduser("~")
-        nxf_assets_dir = os.path.join(homedir,".nextflow","assets")
+        nxf_assets_dir = os.path.join(workdir,".nextflow","assets")
         if not os.path.exists(nxf_assets_dir):
             try:
                 os.makedirs(nxf_assets_dir)
@@ -342,7 +344,7 @@ class WF_RUNNER(Tool):
         
         for volume_dir,volume_mode in volumes:
             validation_params.append("-v")
-            validation_params.append(volume_dir+':'+volume_dir+':'+volume_mode)
+            validation_params.append(volume_dir+'/:'+volume_dir+'/:'+volume_mode)
         
         validation_params.extend(validation_cmd_post_vol)
         
@@ -356,6 +358,15 @@ class WF_RUNNER(Tool):
         
         if retval != 0:
             logger.fatal("ERROR: VRE NF evaluation failed. Exit value: "+str(retval))
+        try:
+            if retval == 0:
+                # These state files are not needed when it has worked
+                shutil.rmtree(os.path.join(workdir,'work'),True)
+            self.packDir(workdir,dest_workdir_archive)
+            shutil.rmtree(workdir,True)
+        except:
+            if retval == 0:
+                retval = 127
         
         return retval == 0
 
