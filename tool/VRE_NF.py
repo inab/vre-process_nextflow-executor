@@ -252,10 +252,23 @@ class WF_RUNNER(Tool):
         # Value needed to compose the Nextflow docker call
         uid = str(os.getuid())
         gid = str(os.getgid())
+
+        # Timezone is needed to get logs properly timed
+        try:
+            with open("/etc/timezone","r") as tzreader:
+                tzstring = tzreader.readline().rstrip()
+        except:
+            # The default for the worst case
+            tzstring = 'Europe/Madrid'
         
         # Temporary directory is removed at the end
         # being compressed to an archive
-        workdir = tempfile.mkdtemp(prefix="vre-",suffix="-job")
+        try:
+            workdir = tempfile.mkdtemp(prefix="vre-",suffix="-job")
+        except Exception as error:
+            logger.fatal("ERROR: Unable to create nextflow working directory. Error: "+str(error))
+            return False
+        
         dest_workdir_archive = os.path.join(os.path.abspath(self.configuration.get('project','.')),'nf-workdir.tar.gz')
         
         # Directories required by Nextflow in a Docker
@@ -275,10 +288,11 @@ class WF_RUNNER(Tool):
             "docker", "run", "--rm", "--net", "host",
             "-e", "USER",
             "-e", "NXF_DEBUG",
+            "-e", "TZ="+tzstring,
             "-e", "HOME="+homedir,
             "-e", "NXF_ASSETS="+nxf_assets_dir,
             "-e", "NXF_USRMAP="+uid,
-            "-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir,
+            "-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring,
             "-v", "/var/run/docker.sock:/var/run/docker.sock"
         ]
         
