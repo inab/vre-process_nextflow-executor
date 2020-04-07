@@ -371,7 +371,9 @@ class WF_RUNNER(Tool):
             validation_params.append(param_val)
         
         logger.debug(' '.join(validation_params))
-        retval = subprocess.call(validation_params)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        retval = subprocess.call(validation_params,stdout=sys.stdout,stderr=sys.stderr)
         
         if retval != 0:
             logger.fatal("ERROR: VRE NF evaluation failed. Exit value: "+str(retval))
