@@ -26,6 +26,7 @@ import fnmatch
 import tarfile
 import shutil
 import io
+import datetime
 
 import hashlib
 
@@ -84,6 +85,8 @@ class WF_RUNNER(Tool):
         logger.info("OpenEBench VRE Nexflow pipeline runner")
         Tool.__init__(self)
 
+        self.timestamp_str = datetime.datetime.now().replace(microsecond=0).strftime("%Y%m%dT%H%M%S")
+        
         local_config = configparser.ConfigParser()
         local_config.read(sys.argv[0] + '.ini')
         
@@ -92,7 +95,7 @@ class WF_RUNNER(Tool):
         self.nxf_version = local_config.get('nextflow','version')  if local_config.has_option('nextflow','version') else self.DEFAULT_NXF_VERSION
         
         self.wf_basedir = os.path.abspath(os.path.expanduser(local_config.get('workflows','basedir')  if local_config.has_option('workflows','basedir') else self.DEFAULT_WF_BASEDIR))
-        
+
         # Where the external commands should be located
         self.docker_cmd = local_config.get('defaults','docker_cmd')  if local_config.has_option('defaults','docker_cmd') else self.DEFAULT_DOCKER_CMD
         self.git_cmd = local_config.get('defaults','git_cmd')  if local_config.has_option('defaults','git_cmd') else self.DEFAULT_GIT_CMD
@@ -207,7 +210,7 @@ class WF_RUNNER(Tool):
         
         return repo_tag_destdir
     
-    def packDir(self, resultsDir, destTarFile):
+    def packDir(self, resultsDir, destTarFile, basePackdir='data'):
         # This is only needed when a manifest must be generated
         
         #for metrics_file in os.listdir(resultsDir):
@@ -223,7 +226,7 @@ class WF_RUNNER(Tool):
         
         # And create the MuG/VRE tar file
         with tarfile.open(destTarFile,mode='w:gz',bufsize=1024*1024) as tar:
-                tar.add(resultsDir,arcname='data',recursive=True)
+                tar.add(resultsDir,arcname=basePackdir,recursive=True)
         
 
     @task(returns=bool, input_loc=FILE_IN, goldstandard_dir_loc=FILE_IN, assess_dir_loc=FILE_IN, public_ref_dir_loc=FILE_IN, results_loc=FILE_OUT, stats_loc=FILE_OUT, other_loc=FILE_OUT, isModifier=False)
@@ -376,7 +379,7 @@ class WF_RUNNER(Tool):
             if retval == 0:
                 # These state files are not needed when it has worked
                 shutil.rmtree(os.path.join(workdir,'work'),True)
-            self.packDir(workdir,dest_workdir_archive)
+            self.packDir(workdir,dest_workdir_archive,basePackdir='nextflow-workdir')
             shutil.rmtree(workdir,True)
         except:
             if retval == 0:
@@ -426,6 +429,7 @@ class WF_RUNNER(Tool):
                 output_files[key] = pop_output_path
         
         participant_id = self.configuration['participant_id']
+        unique_results_dir = participant_id + '_' + self.timestamp_str
         
         metrics_path = output_files.get("metrics")
         if metrics_path is None:
@@ -435,7 +439,7 @@ class WF_RUNNER(Tool):
         
         tar_view_path = output_files.get("tar_view")
         if tar_view_path is None:
-            tar_view_path = os.path.join(project_path,participant_id+'.tar.gz')
+            tar_view_path = os.path.join(project_path,unique_results_dir+'.tar.gz')
         tar_view_path = os.path.abspath(tar_view_path)
         output_files['tar_view'] = tar_view_path
         
@@ -479,7 +483,7 @@ class WF_RUNNER(Tool):
         
         # Preparing the tar files
         if os.path.exists(results_path):
-            self.packDir(results_path,tar_view_path)
+            self.packDir(results_path,tar_view_path,unique_results_dir)
             # Redoing metrics path
             for metrics_file in os.listdir(results_path):
                 if metrics_file.startswith(participant_id) and metrics_file.endswith(".json"):
@@ -489,7 +493,7 @@ class WF_RUNNER(Tool):
         
         # Preparing the expected outputs
         if os.path.exists(stats_path):
-            self.packDir(stats_path,tar_nf_stats_path)
+            self.packDir(stats_path,tar_nf_stats_path,'nextflow-stats')
         
         # Initializing
         images_file_paths = []
@@ -510,7 +514,7 @@ class WF_RUNNER(Tool):
         output_files['report_images'] = images_file_paths
         
         if os.path.exists(other_path):
-            self.packDir(other_path,tar_other_path)
+            self.packDir(other_path,tar_other_path,'other_'+unique_results_dir)
             # Searching for image-like files
             for other_root, other_dirs, other_files in os.walk(other_path):
                 for other_file in other_files:
