@@ -100,8 +100,20 @@ class WF_RUNNER(Tool):
         self.docker_cmd = local_config.get('defaults','docker_cmd')  if local_config.has_option('defaults','docker_cmd') else self.DEFAULT_DOCKER_CMD
         self.git_cmd = local_config.get('defaults','git_cmd')  if local_config.has_option('defaults','git_cmd') else self.DEFAULT_GIT_CMD
         
+        if configuration is None:
+            configuration = {}
+
+        self.configuration.update(configuration)
+        # Arrays are serialized
+        for k,v in self.configuration.items():
+            if isinstance(v,list):
+                self.configuration[k] = ' '.join(v)
+        
+        self.populable_outputs = {}
+
+    def fetchNextflow(self,nextflow_version):
         # Now, we have to assure the nextflow image is already here
-        docker_tag = self.nxf_image+':'+self.nxf_version
+        docker_tag = self.nxf_image+':'+nextflow_version
         checkimage_params = [
             self.docker_cmd,"images","--format","{{.ID}}\t{{.Tag}}",docker_tag
         ]
@@ -143,17 +155,6 @@ class WF_RUNNER(Tool):
                         errstr = "ERROR: VRE Nextflow Runner failed while pulling Nextflow image (retval {}). Tag: {}\n======\nSTDOUT\n======\n{}\n======\nSTDERR\n======\n{}".format(retval,docker_tag,pullimage_stdout_v,pullimage_stderr_v)
                         logger.fatal(errstr)
                         raise Exception(errstr)
-        
-        if configuration is None:
-            configuration = {}
-
-        self.configuration.update(configuration)
-        # Arrays are serialized
-        for k,v in self.configuration.items():
-            if isinstance(v,list):
-                self.configuration[k] = ' '.join(v)
-        
-        self.populable_outputs = {}
 
     def doMaterializeRepo(self, git_uri, git_tag):
         repo_hashed_id = hashlib.sha1(git_uri).hexdigest()
@@ -207,8 +208,21 @@ class WF_RUNNER(Tool):
                         
                         errstr = "ERROR: VRE Nextflow Runner could not pull '{}' (tag '{}'). Retval {}\n======\nSTDOUT\n======\n{}\n======\nSTDERR\n======\n{}".format(git_uri,git_tag,retval,git_stdout_v,git_stderr_v)
                         raise Exception(errstr)
-        
-        return repo_tag_destdir
+
+        # Now, let's guess the repo and nextflow version
+        nextflow_version = self.nxf_version
+        try:
+            with open(os.path.join(repo_tag_destdir,'nextcloud.config'),"r") as nc_config:
+                pat = re.compile(r"nextflowVersion *= *([^ ]+)")
+                for line in nc_config:
+                    matched = pat.search(line)
+                    if matched:
+                        nextflow_version = matched.group(1)
+                        break
+        except:
+            pass
+ 
+        return repo_tag_destdir , nextflow_version
     
     def packDir(self, resultsDir, destTarFile, basePackdir='data'):
         # This is only needed when a manifest must be generated
@@ -241,9 +255,18 @@ class WF_RUNNER(Tool):
         
         # Checking out the repo to be used
         try:
-            repo_dir = self.doMaterializeRepo(nextflow_repo_uri,nextflow_repo_tag)
+            repo_dir , nextflow_version = self.doMaterializeRepo(nextflow_repo_uri,nextflow_repo_tag)
+            logger.info("Fetched workflow: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")")
+            logger.info("Nextflow engine to be used: "+nextflow_version)
         except Exception as error:
             logger.fatal("While materializing repo: "+type(error).__name__ + ': '+str(error))
+            return False
+        
+        # With the version, fetch the engine
+        try:
+            self.fetchNextflow(nextflow_version)
+        except Exception as error:
+            logger.fatal("While materializing Nextflow engine "+nextflow_version+": "+type(error).__name__ + ': '+str(error))
             return False
         
         challenges_ids = self.configuration['challenges_ids']
