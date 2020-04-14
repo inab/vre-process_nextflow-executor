@@ -157,8 +157,8 @@ class WF_RUNNER(Tool):
                         raise Exception(errstr)
 
     def doMaterializeRepo(self, git_uri, git_tag):
-        repo_hashed_id = hashlib.sha1(git_uri).hexdigest()
-        repo_hashed_tag_id = hashlib.sha1(git_tag).hexdigest()
+        repo_hashed_id = hashlib.sha1(git_uri.encode('utf-8')).hexdigest()
+        repo_hashed_tag_id = hashlib.sha1(git_tag.encode('utf-8')).hexdigest()
         
         # Assure directory exists before next step
         repo_destdir = os.path.join(self.wf_basedir,repo_hashed_id)
@@ -257,6 +257,7 @@ class WF_RUNNER(Tool):
         try:
             repo_dir , nextflow_version = self.doMaterializeRepo(nextflow_repo_uri,nextflow_repo_tag)
             logger.info("Fetched workflow: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")")
+            logger.debug("\tLocal dir: "+repo_dir)
             logger.info("Nextflow engine to be used: "+nextflow_version)
         except Exception as error:
             logger.fatal("While materializing repo: "+type(error).__name__ + ': '+str(error))
