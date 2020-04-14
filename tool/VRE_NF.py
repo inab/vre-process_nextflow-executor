@@ -319,7 +319,7 @@ class WF_RUNNER(Tool):
             "-e", "HOME="+homedir,
             "-e", "NXF_ASSETS="+nxf_assets_dir,
             "-e", "NXF_USRMAP="+uid,
-            "-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring,
+            "-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":Z",
             "-v", "/var/run/docker.sock:/var/run/docker.sock"
         ]
         
@@ -336,7 +336,7 @@ class WF_RUNNER(Tool):
         # to generate the volume parameters
         volumes = [
             (homedir,"ro,Z"),
-            (nxf_assets_dir,"Z"),
+        #    (nxf_assets_dir,"Z"),
             (workdir,"Z"),
             (repo_dir,"ro,Z")
         ]
