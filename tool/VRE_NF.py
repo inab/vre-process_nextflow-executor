@@ -212,8 +212,8 @@ class WF_RUNNER(Tool):
         # Now, let's guess the repo and nextflow version
         nextflow_version = self.nxf_version
         try:
-            with open(os.path.join(repo_tag_destdir,'nextcloud.config'),"r") as nc_config:
-                pat = re.compile(r"nextflowVersion *= *([^ ]+)")
+            with open(os.path.join(repo_tag_destdir,'nextflow.config'),"r") as nc_config:
+                pat = re.compile(r"nextflowVersion *= *['\"][>=]*([^ ]+)['\"]")
                 for line in nc_config:
                     matched = pat.search(line)
                     if matched:
