@@ -208,7 +208,10 @@ class WF_RUNNER(Tool):
                         
                         errstr = "ERROR: VRE Nextflow Runner could not pull '{}' (tag '{}'). Retval {}\n======\nSTDOUT\n======\n{}\n======\nSTDERR\n======\n{}".format(git_uri,git_tag,retval,git_stdout_v,git_stderr_v)
                         raise Exception(errstr)
+	 
+        return repo_tag_destdir
 
+    def guessNextflowVersion(self,repo_tag_destdir):
         # Now, let's guess the repo and nextflow version
         nextflow_version = self.nxf_version
         try:
@@ -222,7 +225,79 @@ class WF_RUNNER(Tool):
         except:
             pass
  
-        return repo_tag_destdir , nextflow_version
+        return nextflow_version
+    
+    def identifyRepo(self,repo_dir):
+        remote_url = None
+        remote_sha = None
+        is_tainted = None
+
+        # These commands must be run using repo_dir as working directory
+        gitremote_params = [
+            self.git_cmd, "remote", "get-url", "origin"
+        ]
+
+        with tempfile.SpooledTemporaryFile(mode='w+t') as git_stdout, tempfile.SpooledTemporaryFile(mode='w+t') as git_stderr:
+            # First, call git
+            retval = subprocess.call(gitremote_params,stdout=git_stdout,stderr=git_stderr,cwd=repo_dir)
+            # Then, get the value
+            git_stdout.seek(0)
+            if retval == 0:
+                remote_url = git_stdout.readline().strip()
+            else:
+                # Reading the output and error for the report
+                gitremote_stdout_v = git_stdout.read()
+                git_stderr.seek(0)
+                gitremote_stderr_v = git_stderr.read()
+                
+                errstr = "VRE Nextflow Runner failed while checking workflow remote (retval {})\n======\nSTDOUT\n======\n{}\n======\nSTDERR\n======\n{}".format(retval,gitremote_stdout_v,gitremote_stderr_v)
+                logger.warning(errstr)
+        
+
+        gitrevparse_params = [
+            self.git_cmd, "rev-parse","HEAD"
+        ]
+
+        with tempfile.SpooledTemporaryFile(mode='w+t') as git_stdout, tempfile.SpooledTemporaryFile(mode='w+t') as git_stderr:
+            # First, call git
+            retval = subprocess.call(gitrevparse_params,stdout=git_stdout,stderr=git_stderr,cwd=repo_dir)
+            # Then, get the value
+            git_stdout.seek(0)
+            if retval == 0:
+                remote_sha = git_stdout.readline().strip()
+            else:
+                # Reading the output and error for the report
+                gitrevparse_stdout_v = git_stdout.read()
+                git_stderr.seek(0)
+                gitrevparse_stderr_v = git_stderr.read()
+                
+                errstr = "VRE Nextflow Runner failed while checking workflow HEAD (retval {})\n======\nSTDOUT\n======\n{}\n======\nSTDERR\n======\n{}".format(retval,gitrevparse_stdout_v,gitrevparse_stderr_v)
+                logger.warning(errstr)
+
+        
+        gitstatus_params = [
+            self.git_cmd, "status","--porcelain"
+        ]
+
+        with tempfile.SpooledTemporaryFile(mode='w+t') as git_stdout, tempfile.SpooledTemporaryFile(mode='w+t') as git_stderr:
+            # First, call git
+            retval = subprocess.call(gitstatus_params,stdout=git_stdout,stderr=git_stderr,cwd=repo_dir)
+            # Then, get the value
+            git_stdout.seek(0)
+            if retval == 0:
+                statusmsg = git_stdout.read()
+                if len(statusmsg) > 0:
+                    is_tainted = statusmsg
+            else:
+                # Reading the output and error for the report
+                gitstatus_stdout_v = git_stdout.read()
+                git_stderr.seek(0)
+                gitstatus_stderr_v = git_stderr.read()
+                
+                errstr = "VRE Nextflow Runner failed while checking workflow taint state (retval {})\n======\nSTDOUT\n======\n{}\n======\nSTDERR\n======\n{}".format(retval,gitstatus_stdout_v,gitstatus_stderr_v)
+                logger.warning(errstr)
+
+        return remote_url, remote_sha , is_tainted
     
     def packDir(self, resultsDir, destTarFile, basePackdir='data'):
         # This is only needed when a manifest must be generated
@@ -240,28 +315,82 @@ class WF_RUNNER(Tool):
         
         # And create the MuG/VRE tar file
         with tarfile.open(destTarFile,mode='w:gz',bufsize=1024*1024) as tar:
-                tar.add(resultsDir,arcname=basePackdir,recursive=True)
+            tar.add(resultsDir,arcname=basePackdir,recursive=True)
+
+    # Unpacks an archive to a given directory, and it returns the
+    # composed path of the first entry, if it is a directory, or
+    # the destination directory otherwise
+    def unpackDir(self,originTarFile,destdir):
+        retval = None
+
+        with tarfile.open(originTarFile,mode='r:*',bufsize=1024*1024) as tar:
+            first_member = tar.next()
+            if first_member is not None:
+                retval = os.path.join(destdir,first_member.name)  if first_member.isdir()  else destdir
+                tar.extractall(path=destdir)
+
+        return retval
         
 
-    @task(returns=bool, input_loc=FILE_IN, goldstandard_dir_loc=FILE_IN, assess_dir_loc=FILE_IN, public_ref_dir_loc=FILE_IN, results_loc=FILE_OUT, stats_loc=FILE_OUT, other_loc=FILE_OUT, isModifier=False)
-    def validate_and_assess(self, input_loc, goldstandard_dir_loc, assess_dir_loc, public_ref_dir_loc, results_loc, stats_loc, other_loc):  # pylint: disable=no-self-use
-        # First, we need to materialize the workflow
+    @task(returns=bool, input_loc=FILE_IN, goldstandard_dir_loc=FILE_IN, assess_dir_loc=FILE_IN, public_ref_dir_loc=FILE_IN, results_loc=FILE_OUT, stats_loc=FILE_OUT, other_loc=FILE_OUT, dest_workflow_archive=FILE_OUT, isModifier=False)
+    def validate_and_assess(self, input_loc, goldstandard_dir_loc, assess_dir_loc, public_ref_dir_loc, results_loc, stats_loc, other_loc, dest_workflow_archive):  # pylint: disable=no-self-use
+        # Temporary directory is removed at the end
+        # being compressed to an archive
+        try:
+            workdir = tempfile.mkdtemp(prefix="vre-",suffix="-job")
+        except Exception as error:
+            logger.fatal("ERROR: Unable to create instantiation working directory. Error: "+str(error))
+            return False
+        
+        # This path is badly needed
+        project_path = os.path.abspath(self.configuration.get('project','.'))
+
         nextflow_repo_uri = self.configuration.get('nextflow_repo_uri')
         nextflow_repo_tag = self.configuration.get('nextflow_repo_tag')
-        
         if (nextflow_repo_uri is None) or (nextflow_repo_tag is None):
             logger.fatal("FATAL ERROR: both 'nextflow_repo_uri' and 'nextflow_repo_tag' parameters must be defined")
             return False
         
-        # Checking out the repo to be used
-        try:
-            repo_dir , nextflow_version = self.doMaterializeRepo(nextflow_repo_uri,nextflow_repo_tag)
-            logger.info("Fetched workflow: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")")
-            logger.debug("\tLocal dir: "+repo_dir)
-            logger.info("Nextflow engine to be used: "+nextflow_version)
-        except Exception as error:
-            logger.fatal("While materializing repo: "+type(error).__name__ + ': '+str(error))
-            return False
+        if os.path.isfile(dest_workflow_archive):
+            # If the workflow archive already exists, override all the
+            # logic, as we are re-running a previous instance
+            repo_dir = self.unpackDir(dest_workflow_archive,workdir)
+
+            # These two values are populated from the workflow checkout info
+            new_nextflow_repo_uri , new_nextflow_repo_tag , is_tainted = self.identifyRepo(repo_dir)
+            logger.info("Cached workflow: "+new_nextflow_repo_uri+" ("+new_nextflow_repo_tag+")")
+
+            if new_nextflow_repo_uri!=nextflow_repo_uri or new_nextflow_repo_tag!=nextflow_repo_tag:
+                logger.warning("Cached workflow differs from requested one. \n\tExpected: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")\n\tFound: "+new_nextflow_repo_uri+" ("+new_nextflow_repo_tag+")")
+                # As we are using this copy, rewrite these variables
+                nextflow_repo_uri = new_nextflow_repo_uri
+                nextflow_repo_tag = new_nextflow_repo_tag
+        else:
+            # First, we need to materialize the workflow
+            # checking out the repo to be used
+            try:
+                repo_dir = self.doMaterializeRepo(nextflow_repo_uri,nextflow_repo_tag)
+                logger.info("Fetched workflow: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")")
+                self.packDir(repo_dir,dest_workflow_archive,basePackdir='workflow-'+nextflow_repo_tag)
+
+                # Detecting whether the repo is tainted
+                test_nextflow_repo_uri, test_nextflow_repo_tag, is_tainted = self.identifyRepo(repo_dir)
+                if test_nextflow_repo_uri!=nextflow_repo_uri or test_nextflow_repo_tag!=nextflow_repo_tag:
+                    logger.warning("Cached repo URI and tag do not match. \n\tExpected: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")\n\tFound: "+test_nextflow_repo_uri+" ("+test_nextflow_repo_tag+")")
+                    # As we are using this copy, rewrite these variables
+                    nextflow_repo_uri = test_nextflow_repo_uri
+                    nextflow_repo_tag = test_nextflow_repo_tag
+            except Exception as error:
+                logger.fatal("While materializing repo: "+type(error).__name__ + ': '+str(error))
+                return False
+
+        logger.debug("\tLocal dir: "+repo_dir)
+        if is_tainted:
+            logger.warning("Local copy of the repo is tainted. Report:\n"+is_tainted)
+        
+        # Guess workflow engine to use
+        nextflow_version = self.guessNextflowVersion(repo_dir)
+        logger.info("Nextflow engine to be used: "+nextflow_version)
         
         # With the version, fetch the engine
         try:
@@ -269,6 +398,11 @@ class WF_RUNNER(Tool):
         except Exception as error:
             logger.fatal("While materializing Nextflow engine "+nextflow_version+": "+type(error).__name__ + ': '+str(error))
             return False
+        
+        # The directories are being created for the workflow manager, so they have the right owner
+        os.makedirs(results_loc)
+        os.makedirs(stats_loc)
+        os.makedirs(other_loc)
         
         challenges_ids = self.configuration['challenges_ids']
         participant_id = self.configuration['participant_id']
@@ -296,7 +430,7 @@ class WF_RUNNER(Tool):
             logger.fatal("ERROR: Unable to create nextflow working directory. Error: "+str(error))
             return False
         
-        dest_workdir_archive = os.path.join(os.path.abspath(self.configuration.get('project','.')),'nf-workdir.tar.gz')
+        dest_workdir_archive = os.path.join(project_path,'nf-workdir.tar.gz')
         
         # Directories required by Nextflow in a Docker
         homedir = os.path.expanduser("~")
@@ -319,7 +453,7 @@ class WF_RUNNER(Tool):
             "-e", "HOME="+homedir,
             "-e", "NXF_ASSETS="+nxf_assets_dir,
             "-e", "NXF_USRMAP="+uid,
-            "-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":Z",
+            "-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,Z -v "+project_path+":"+project_path+":rw,Z",
             "-v", "/var/run/docker.sock:/var/run/docker.sock"
         ]
         
@@ -335,10 +469,11 @@ class WF_RUNNER(Tool):
         # This one will be filled in by the volume meta declarations, used
         # to generate the volume parameters
         volumes = [
-            (homedir,"ro,Z"),
+            (homedir+'/',"ro,Z"),
         #    (nxf_assets_dir,"Z"),
-            (workdir,"Z"),
-            (repo_dir,"ro,Z")
+            (workdir+'/',"rw,Z"),
+            (project_path+'/',"rw,Z"),
+            (repo_dir+'/',"ro,Z")
         ]
         
         # These are the parameters, including input and output files and directories
@@ -361,9 +496,9 @@ class WF_RUNNER(Tool):
         ]
         
         variable_outfile_params = [
-            ('statsdir',stats_loc),
-            ('outdir',results_loc),
-            ('otherdir',other_loc)
+            ('statsdir',stats_loc+'/'),
+            ('outdir',results_loc+'/'),
+            ('otherdir',other_loc+'/')
         ]
         
         # The list of populable outputs
@@ -371,12 +506,38 @@ class WF_RUNNER(Tool):
         
         # Preparing the RO volumes
         for ro_loc_id,ro_loc_val in variable_infile_params:
+            if os.path.exists(ro_loc_val):
+                if ro_loc_val.endswith('/') and os.path.isfile(ro_loc_val):
+                    ro_loc_val = ro_loc_val[:-1]
+                elif not ro_loc_val.endswith('/') and os.path.isdir(ro_loc_val):
+                    ro_loc_val += '/'
             volumes.append((ro_loc_val,"ro,Z"))
             variable_params.append((ro_loc_id,ro_loc_val))
         
         # Preparing the RW volumes
         for rw_loc_id,rw_loc_val in variable_outfile_params:
-            volumes.append((rw_loc_val,"Z"))
+            # We can skip integrating subpaths of project_path
+            if os.path.commonprefix([os.path.normpath(rw_loc_val),project_path]) != project_path:
+                if os.path.exists(rw_loc_val):
+                    if rw_loc_val.endswith('/') and os.path.isfile(rw_loc_val):
+                        rw_loc_val = rw_loc_val[:-1]
+                    elif not rw_loc_val.endswith('/') and os.path.isdir(rw_loc_val):
+                        rw_loc_val += '/'
+                elif rw_loc_val.endswith('/'):
+                    # Forcing the creation of the directory
+                    try:
+                        os.makedirs(rw_loc_val)
+                    except:
+                        pass
+                else:
+                    # Forcing the creation of the file
+                    # so docker does not create it as a directory
+                    with open(rw_loc_val,mode="a") as pop_output_h:
+                        logger.debug("Pre-created empty output file (ownership purposes) "+rw_loc_val)
+                        pass
+                
+                volumes.append((rw_loc_val,"Z"))
+
             variable_params.append((rw_loc_id,rw_loc_val))
         
         # Assembling the command line    
@@ -385,7 +546,7 @@ class WF_RUNNER(Tool):
         
         for volume_dir,volume_mode in volumes:
             validation_params.append("-v")
-            validation_params.append(volume_dir+'/:'+volume_dir+'/:'+volume_mode)
+            validation_params.append(volume_dir+':'+volume_dir+':'+volume_mode)
         
         validation_params.extend(validation_cmd_post_vol)
         
@@ -448,9 +609,6 @@ class WF_RUNNER(Tool):
                 if not os.path.isdir(pop_output_parent_dir):
                     os.makedirs(pop_output_parent_dir)
                 
-                # Forcing the creation of the file
-                with open(pop_output_path,mode="a") as pop_output_h:
-                    pass
                 self.populable_outputs[key] = pop_output_path
                 output_files[key] = pop_output_path
         
@@ -481,15 +639,16 @@ class WF_RUNNER(Tool):
         tar_other_path = os.path.abspath(tar_other_path)
         output_files['tar_other'] = tar_other_path
         
+        dest_workflow_archive = output_files.get("workflow_archive")
+        if dest_workflow_archive is None:
+            dest_workflow_archive = os.path.join(project_path,'.workflow.tar.gz')
+        dest_workflow_archive = os.path.abspath(dest_workflow_archive)
+        output_files['workflow_archive'] = dest_workflow_archive
+        
         # Defining the output directories
         results_path = os.path.join(project_path,'results')
         stats_path = os.path.join(project_path,'nf_stats')
         other_path = os.path.join(project_path,'other_files')
-        
-        # The directories are being created for the workflow manager, so they have the right owner
-        os.makedirs(results_path)
-        os.makedirs(stats_path)
-        os.makedirs(other_path)
         
         results = self.validate_and_assess(
             os.path.abspath(input_files["input"]),
@@ -498,7 +657,8 @@ class WF_RUNNER(Tool):
             os.path.abspath(input_files['public_ref_dir']),
             results_path,
             stats_path,
-            other_path
+            other_path,
+            dest_workflow_archive
         )
         results = compss_wait_on(results)
         
