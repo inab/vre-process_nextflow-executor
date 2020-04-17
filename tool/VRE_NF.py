@@ -560,12 +560,16 @@ class WF_RUNNER(Tool):
         sys.stderr.flush()
         retval = subprocess.call(validation_params,stdout=sys.stdout,stderr=sys.stderr)
         
-        if retval != 0:
-            logger.fatal("ERROR: VRE NF evaluation failed. Exit value: "+str(retval))
         try:
             if retval == 0:
                 # These state files are not needed when it has worked
                 shutil.rmtree(os.path.join(workdir,'work'),True)
+                # The workflow snapshot is removed
+                os.unlink(dest_workflow_archive)
+            else:
+                logger.fatal("ERROR: VRE NF evaluation failed. Exit value: "+str(retval))
+
+            # Nextflow workdir is saved for further analysis
             self.packDir(workdir,dest_workdir_archive,basePackdir='nextflow-workdir')
             shutil.rmtree(workdir,True)
         except:
@@ -643,7 +647,6 @@ class WF_RUNNER(Tool):
         if dest_workflow_archive is None:
             dest_workflow_archive = os.path.join(project_path,'.workflow.tar.gz')
         dest_workflow_archive = os.path.abspath(dest_workflow_archive)
-        output_files['workflow_archive'] = dest_workflow_archive
         
         # Defining the output directories
         results_path = os.path.join(project_path,'results')
@@ -666,7 +669,7 @@ class WF_RUNNER(Tool):
             logger.fatal("VRE NF RUNNER pipeline failed. See logs")
             raise Exception("VRE NF RUNNER pipeline failed. See logs")
             return {}, {}
-        
+       
         # Preparing the tar files
         if os.path.exists(results_path):
             self.packDir(results_path,tar_view_path,unique_results_dir)
@@ -764,6 +767,18 @@ class WF_RUNNER(Tool):
                 }
             )
         }
+
+        if os.path.isfile(dest_workflow_archive):
+            output_files['workflow_archive'] = dest_workflow_archive
+            output_metadata['workflow_archive'] = Metadata(
+                type="file",
+                file_type="TAR",
+                file_path=dest_workflow_archive,
+                meta_data={
+                    "tool": "VRE_NF_RUNNER",
+                    "visible": false
+                }
+            )
         
         # Adding the additional interesting files
         output_metadata.update(images_metadata)
