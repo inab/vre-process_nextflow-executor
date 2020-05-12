@@ -62,6 +62,7 @@ class WF_RUNNER(Tool):
     DEFAULT_NXF_IMAGE='nextflow/nextflow'
     DEFAULT_NXF_VERSION='19.04.1'
     DEFAULT_WF_BASEDIR='WF-checkouts'
+    DEFAULT_MAX_RETRIES=5
     
     DEFAULT_DOCKER_CMD='docker'
     DEFAULT_GIT_CMD='git'
@@ -93,6 +94,7 @@ class WF_RUNNER(Tool):
         # Setup parameters
         self.nxf_image = local_config.get('nextflow','docker_image')  if local_config.has_option('nextflow','docker_image') else self.DEFAULT_NXF_IMAGE
         self.nxf_version = local_config.get('nextflow','version')  if local_config.has_option('nextflow','version') else self.DEFAULT_NXF_VERSION
+        self.max_retries = int(local_config.get('nextflow','max-retries'))  if local_config.has_option('nextflow','max-retries') else self.DEFAULT_MAX_RETRIES
         
         self.wf_basedir = os.path.abspath(os.path.expanduser(local_config.get('workflows','basedir')  if local_config.has_option('workflows','basedir') else self.DEFAULT_WF_BASEDIR))
 
@@ -453,9 +455,9 @@ class WF_RUNNER(Tool):
             "-e", "HOME="+homedir,
             "-e", "NXF_ASSETS="+nxf_assets_dir,
             "-e", "NXF_USRMAP="+uid,
-            #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,Z -v "+project_path+":"+project_path+":rw,Z",
-            "-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,Z",
-            "-v", "/var/run/docker.sock:/var/run/docker.sock"
+            #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z -v "+project_path+":"+project_path+":rw,rprivate,z",
+            "-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z",
+            "-v", "/var/run/docker.sock:/var/run/docker.sock:rw,rprivate,z"
         ]
         
         validation_cmd_post_vol = [
@@ -472,11 +474,11 @@ class WF_RUNNER(Tool):
         # This one will be filled in by the volume meta declarations, used
         # to generate the volume parameters
         volumes = [
-            (homedir+'/',"ro,Z"),
-        #    (nxf_assets_dir,"Z"),
-            (workdir+'/',"rw,Z"),
-            (project_path+'/',"rw,Z"),
-            (repo_dir+'/',"ro,Z")
+            (homedir+'/',"ro,rprivate,z"),
+        #    (nxf_assets_dir,"rprivate,z"),
+            (workdir+'/',"rw,rprivate,z"),
+            (project_path+'/',"rw,rprivate,z"),
+            (repo_dir+'/',"ro,rprivate,z")
         ]
         
         # These are the parameters, including input and output files and directories
@@ -514,7 +516,7 @@ class WF_RUNNER(Tool):
                     ro_loc_val = ro_loc_val[:-1]
                 elif not ro_loc_val.endswith('/') and os.path.isdir(ro_loc_val):
                     ro_loc_val += '/'
-            volumes.append((ro_loc_val,"ro,Z"))
+            volumes.append((ro_loc_val,"ro,rprivate,z"))
             variable_params.append((ro_loc_id,ro_loc_val))
         
         # Preparing the RW volumes
@@ -539,7 +541,7 @@ class WF_RUNNER(Tool):
                         logger.debug("Pre-created empty output file (ownership purposes) "+rw_loc_val)
                         pass
                 
-                volumes.append((rw_loc_val,"Z"))
+                volumes.append((rw_loc_val,"rprivate,z"))
 
             variable_params.append((rw_loc_id,rw_loc_val))
         
@@ -565,7 +567,10 @@ class WF_RUNNER(Tool):
         validation_params.extend(validation_params_flags)
         validation_params_resume.extend(validation_params_flags)
         
-        retries = 5
+        # Retries system was introduced because an insidious
+        # bug happens sometimes
+        # https://forums.docker.com/t/any-known-problems-with-symlinks-on-bind-mounts/32138
+        retries = self.max_retries
         retval = -1
         validation_params_cmd = validation_params
         while retries > 0 and retval != 0:
