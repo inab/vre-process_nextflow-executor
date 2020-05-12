@@ -453,7 +453,8 @@ class WF_RUNNER(Tool):
             "-e", "HOME="+homedir,
             "-e", "NXF_ASSETS="+nxf_assets_dir,
             "-e", "NXF_USRMAP="+uid,
-            "-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,Z -v "+project_path+":"+project_path+":rw,Z",
+            #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,Z -v "+project_path+":"+project_path+":rw,Z",
+            "-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,Z",
             "-v", "/var/run/docker.sock:/var/run/docker.sock"
         ]
         
@@ -462,6 +463,8 @@ class WF_RUNNER(Tool):
             self.nxf_image+":"+self.nxf_version,
             "nextflow", "run", repo_dir, "-profile", "docker"
         ]
+        
+        validation_cmd_post_vol_resume = [ *validation_cmd_post_vol , '-resume' ]
         
         # This one will be filled in by the volume parameters passed to docker
         #docker_vol_params = []
@@ -548,17 +551,34 @@ class WF_RUNNER(Tool):
             validation_params.append("-v")
             validation_params.append(volume_dir+':'+volume_dir+':'+volume_mode)
         
+        validation_params_resume = [ *validation_params ]
+
         validation_params.extend(validation_cmd_post_vol)
+        validation_params_resume.extend(validation_cmd_post_vol_resume)
         
         # Last, but not the least important
+        validation_params_flags = []
         for param_id,param_val in variable_params:
-            validation_params.append("--" + param_id)
-            validation_params.append(param_val)
+            validation_params_flags.append("--" + param_id)
+            validation_params_flags.append(param_val)
+
+        validation_params.extend(validation_params_flags)
+        validation_params_resume.extend(validation_params_flags)
         
-        logger.debug(' '.join(validation_params))
-        sys.stdout.flush()
-        sys.stderr.flush()
-        retval = subprocess.call(validation_params,stdout=sys.stdout,stderr=sys.stderr)
+        retries = 5
+        retval = -1
+        validation_params_cmd = validation_params
+        while retries > 0 and retval != 0:
+            logger.debug('"'+'" "'.join(validation_params_cmd)+'"')
+            sys.stdout.flush()
+            sys.stderr.flush()
+            
+            retval = subprocess.call(validation_params_cmd,stdout=sys.stdout,stderr=sys.stderr)
+            if retval != 0:
+                retries -= 1
+                logger.debug("\nFailed with {} , left {} tries\n".format(retval,retries))
+                validation_params_cmd = validation_params_resume
+
         
         if retval != 0:
             logger.fatal("ERROR: VRE NF evaluation failed. Exit value: "+str(retval))
