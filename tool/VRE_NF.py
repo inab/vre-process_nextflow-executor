@@ -63,6 +63,7 @@ class WF_RUNNER(Tool):
     DEFAULT_NXF_VERSION='19.04.1'
     DEFAULT_WF_BASEDIR='WF-checkouts'
     DEFAULT_MAX_RETRIES=5
+    DEFAULT_MAX_CPUS=4
     
     DEFAULT_DOCKER_CMD='docker'
     DEFAULT_GIT_CMD='git'
@@ -95,6 +96,7 @@ class WF_RUNNER(Tool):
         self.nxf_image = local_config.get('nextflow','docker_image')  if local_config.has_option('nextflow','docker_image') else self.DEFAULT_NXF_IMAGE
         self.nxf_version = local_config.get('nextflow','version')  if local_config.has_option('nextflow','version') else self.DEFAULT_NXF_VERSION
         self.max_retries = int(local_config.get('nextflow','max-retries'))  if local_config.has_option('nextflow','max-retries') else self.DEFAULT_MAX_RETRIES
+        self.max_cpus = int(local_config.get('nextflow','max-cpus'))  if local_config.has_option('nextflow','max-cpus') else self.DEFAULT_MAX_CPUS
         
         self.wf_basedir = os.path.abspath(os.path.expanduser(local_config.get('workflows','basedir')  if local_config.has_option('workflows','basedir') else self.DEFAULT_WF_BASEDIR))
 
@@ -463,7 +465,8 @@ class WF_RUNNER(Tool):
         validation_cmd_post_vol = [
             "-w", workdir,
             self.nxf_image+":"+self.nxf_version,
-            "nextflow", "run", repo_dir, "-profile", "docker"
+            "nextflow", "run", repo_dir, "-profile", "docker",
+            "-executor.\\$local.cpus={0}".format(self.max_cpus),
         ]
         
         validation_cmd_post_vol_resume = [ *validation_cmd_post_vol , '-resume' ]
