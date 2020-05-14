@@ -773,7 +773,7 @@ class WF_RUNNER(Tool):
             "tar_nf_stats": Metadata(
                 # These ones are already known by the platform
                 # so comment them by now
-                data_type="tool_statistics",
+                data_type="workflow_stats",
                 file_type="TAR",
                 file_path=tar_nf_stats_path,
                 # Reference and golden data set paths should also be here
@@ -785,7 +785,7 @@ class WF_RUNNER(Tool):
             "tar_other": Metadata(
                 # These ones are already known by the platform
                 # so comment them by now
-                data_type="tool_statistics",
+                data_type="other",
                 file_type="TAR",
                 file_path=tar_other_path,
                 # Reference and golden data set paths should also be here
