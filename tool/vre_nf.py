@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import sys
 import os
+import re
 import configparser
 import subprocess
 import tempfile
@@ -68,7 +69,7 @@ class WF_RUNNER(Tool):
     DEFAULT_DOCKER_CMD='docker'
     DEFAULT_GIT_CMD='git'
     
-    MASKED_KEYS = { 'execution', 'project', 'description', 'nextflow_repo_uri', 'nextflow_repo_tag' }
+    MASKED_KEYS = { 'execution', 'project', 'description', 'nextflow_repo_uri', 'nextflow_repo_tag', 'nextflow_repo_reldir' }
     
     MASKED_OUT_KEYS = { 'metrics', 'tar_view', 'tar_nf_stats', 'tar_other' }
     
@@ -351,6 +352,7 @@ class WF_RUNNER(Tool):
 
         nextflow_repo_uri = self.configuration.get('nextflow_repo_uri')
         nextflow_repo_tag = self.configuration.get('nextflow_repo_tag')
+        nextflow_repo_reldir = self.configuration.get('nextflow_repo_reldir')
         if (nextflow_repo_uri is None) or (nextflow_repo_tag is None):
             logger.fatal("FATAL ERROR: both 'nextflow_repo_uri' and 'nextflow_repo_tag' parameters must be defined")
             return False
@@ -359,9 +361,13 @@ class WF_RUNNER(Tool):
             # If the workflow archive already exists, override all the
             # logic, as we are re-running a previous instance
             repo_dir = self.unpackDir(dest_workflow_archive,workdir)
+            if (nextflow_repo_reldir is not None) and len(nextflow_repo_reldir) > 0:
+                workflow_dir = os.path.join(repo_dir, nextflow_repo_reldir)
+            else:
+                workflow_dir = repo_dir
 
             # These two values are populated from the workflow checkout info
-            new_nextflow_repo_uri , new_nextflow_repo_tag , is_tainted = self.identifyRepo(repo_dir)
+            new_nextflow_repo_uri , new_nextflow_repo_tag , is_tainted = self.identifyRepo(workflow_dir)
             logger.info("Cached workflow: "+new_nextflow_repo_uri+" ("+new_nextflow_repo_tag+")")
 
             if new_nextflow_repo_uri!=nextflow_repo_uri or new_nextflow_repo_tag!=nextflow_repo_tag:
@@ -378,7 +384,11 @@ class WF_RUNNER(Tool):
                 self.packDir(repo_dir,dest_workflow_archive,basePackdir='workflow-'+nextflow_repo_tag)
 
                 # Detecting whether the repo is tainted
-                test_nextflow_repo_uri, test_nextflow_repo_tag, is_tainted = self.identifyRepo(repo_dir)
+                if (nextflow_repo_reldir is not None) and len(nextflow_repo_reldir) > 0:
+                    workflow_dir = os.path.join(repo_dir, nextflow_repo_reldir)
+                else:
+                    workflow_dir = repo_dir
+                test_nextflow_repo_uri, test_nextflow_repo_tag, is_tainted = self.identifyRepo(workflow_dir)
                 if test_nextflow_repo_uri!=nextflow_repo_uri or test_nextflow_repo_tag!=nextflow_repo_tag:
                     logger.warning("Cached repo URI and tag do not match. \n\tExpected: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")\n\tFound: "+test_nextflow_repo_uri+" ("+test_nextflow_repo_tag+")")
                     # As we are using this copy, rewrite these variables
@@ -388,12 +398,12 @@ class WF_RUNNER(Tool):
                 logger.fatal("While materializing repo: "+type(error).__name__ + ': '+str(error))
                 return False
 
-        logger.debug("\tLocal dir: "+repo_dir)
+        logger.debug("\tLocal dir: "+workflow_dir)
         if is_tainted:
             logger.warning("Local copy of the repo is tainted. Report:\n"+is_tainted)
         
         # Guess workflow engine to use
-        nextflow_version = self.guessNextflowVersion(repo_dir)
+        nextflow_version = self.guessNextflowVersion(workflow_dir)
         logger.info("Nextflow engine to be used: "+nextflow_version)
         
         # With the version, fetch the engine
@@ -465,7 +475,7 @@ class WF_RUNNER(Tool):
         validation_cmd_post_vol = [
             "-w", workdir,
             self.nxf_image+":"+self.nxf_version,
-            "nextflow", "run", repo_dir, "-profile", "docker",
+            "nextflow", "run", workflow_dir, "-profile", "docker",
             "-executor.\\$local.cpus={0}".format(self.max_cpus),
         ]
         
@@ -481,7 +491,7 @@ class WF_RUNNER(Tool):
         #    (nxf_assets_dir,"rprivate,z"),
             (workdir+'/',"rw,rprivate,z"),
             (project_path+'/',"rw,rprivate,z"),
-            (repo_dir+'/',"ro,rprivate,z")
+            (workflow_dir+'/',"ro,rprivate,z")
         ]
         
         # These are the parameters, including input and output files and directories
@@ -799,12 +809,12 @@ class WF_RUNNER(Tool):
         if os.path.isfile(dest_workflow_archive):
             output_files['workflow_archive'] = dest_workflow_archive
             output_metadata['workflow_archive'] = Metadata(
-                type="file",
+                data_type="file",
                 file_type="TAR",
                 file_path=dest_workflow_archive,
                 meta_data={
                     "tool": "VRE_NF_RUNNER",
-                    "visible": false
+                    "visible": False
                 }
             )
         

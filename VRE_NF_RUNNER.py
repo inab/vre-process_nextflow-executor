@@ -17,6 +17,7 @@
    limitations under the License.
 """
 from __future__ import print_function
+from __future__ import absolute_import
 
 # Required for ReadTheDocs
 from functools import wraps # pylint: disable=unused-import
@@ -26,7 +27,8 @@ import argparse
 from basic_modules.workflow import Workflow
 from utils import logger
 
-from tool.VRE_NF import WF_RUNNER
+import tool.vre_nf
+from tool.vre_nf import WF_RUNNER
 
 import json
 
