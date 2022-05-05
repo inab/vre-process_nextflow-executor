@@ -55,4 +55,4 @@
     pip install -r requirements.txt
     ```
   
-3. Docker image with [Nextflow](https://www.nextflow.io/) is fetched on first wrapper invocation. The specific version is determined by the content of [VRE_NF_RUNNER.py.ini](VRE_NF_RUNNER.py.ini). Docker images needed by the workflows are fetched on demand.
+4. Docker image with [Nextflow](https://www.nextflow.io/) is fetched on first wrapper invocation. The specific version is determined by the content of [VRE_NF_RUNNER.py.ini](VRE_NF_RUNNER.py.ini). Docker images needed by the workflows are fetched on demand.
