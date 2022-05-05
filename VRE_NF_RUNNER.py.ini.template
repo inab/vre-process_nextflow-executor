@@ -1,0 +1,24 @@
+[defaults]
+# The 'docker' command path. It defaults to "docker"
+docker_cmd=docker
+# The 'git' command path. It defaults to "git"
+git_cmd=git
+[nextflow]
+# The name of the Nextflow docker image to use, which should provide
+# the nextflow command line
+docker_image=nextflow/nextflow
+# The tag of the Nextflow docker image to use when no version is detected
+# in the 'manifest' section of the nextflow.config file from the workflow.
+version=19.04.1
+# Max number of retries trying to finish the workflow. Sometimes due some
+# bugs of NFS and specific docker versions, some files are "invisible"
+# on one execution due a race condition, so it is advisable to retry.
+max-retries=5
+# Max number of concurrent jobs to be used by nextflow in order to run
+# its processes. This parameter does not set up the containerized application
+# parallelism, but independent processes concurrent run
+max-cpus=4
+[workflows]
+# The directory where all the workflows fetched from git repositories
+# are cached.
+basedir=~/WF-checkouts

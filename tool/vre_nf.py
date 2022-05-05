@@ -65,11 +65,12 @@ class WF_RUNNER(Tool):
     DEFAULT_WF_BASEDIR='WF-checkouts'
     DEFAULT_MAX_RETRIES=5
     DEFAULT_MAX_CPUS=4
+    DEFAULT_WORKFLOW_PROFILE = 'docker'
     
     DEFAULT_DOCKER_CMD='docker'
     DEFAULT_GIT_CMD='git'
     
-    MASKED_KEYS = { 'execution', 'project', 'description', 'nextflow_repo_uri', 'nextflow_repo_tag', 'nextflow_repo_reldir' }
+    MASKED_KEYS = { 'execution', 'project', 'description', 'nextflow_repo_uri', 'nextflow_repo_tag', 'nextflow_repo_reldir', 'nextflow_repo_profile' }
     
     MASKED_OUT_KEYS = { 'metrics', 'tar_view', 'tar_nf_stats', 'tar_other' }
     
@@ -86,12 +87,25 @@ class WF_RUNNER(Tool):
         Init function
         """
         logger.info("OpenEBench VRE Nexflow pipeline runner")
-        Tool.__init__(self)
+        super().__init__()
 
         self.timestamp_str = datetime.datetime.now().replace(microsecond=0).strftime("%Y%m%dT%H%M%S")
         
         local_config = configparser.ConfigParser()
-        local_config.read(sys.argv[0] + '.ini')
+        local_config_filename = sys.argv[0] + '.ini'
+        if not os.path.exists(local_config_filename):
+            local_config_filename_template = local_config_filename + '.template'
+            try:
+                shutil.copy2(local_config_filename_template, local_config_filename)
+                logger.debug("Configuration file {} initialized with the default template {}".format(local_config_filename, local_config_filename_template))
+            except:
+                logger.exception("Unable to copy configuration file template {} to ´{}".format(local_config_filename_template, local_config_filename))
+                # This could happen if the installation dir belongs to
+                # a different user, so let's go through the default path
+                local_config_filename = local_config_filename_template
+        
+        # In any case ... let's try reading
+        local_config.read(local_config_filename)
         
         # Setup parameters
         self.nxf_image = local_config.get('nextflow','docker_image')  if local_config.has_option('nextflow','docker_image') else self.DEFAULT_NXF_IMAGE
@@ -353,6 +367,7 @@ class WF_RUNNER(Tool):
         nextflow_repo_uri = self.configuration.get('nextflow_repo_uri')
         nextflow_repo_tag = self.configuration.get('nextflow_repo_tag')
         nextflow_repo_reldir = self.configuration.get('nextflow_repo_reldir')
+        nextflow_repo_profile = self.configuration.get('nextflow_repo_profile', self.DEFAULT_WORKFLOW_PROFILE)
         if (nextflow_repo_uri is None) or (nextflow_repo_tag is None):
             logger.fatal("FATAL ERROR: both 'nextflow_repo_uri' and 'nextflow_repo_tag' parameters must be defined")
             return False
@@ -475,9 +490,12 @@ class WF_RUNNER(Tool):
         validation_cmd_post_vol = [
             "-w", workdir,
             self.nxf_image+":"+self.nxf_version,
-            "nextflow", "run", workflow_dir, "-profile", "docker",
+            "nextflow", "run", workflow_dir,
             "-executor.\\$local.cpus={0}".format(self.max_cpus),
         ]
+        # Use profiles only when they are set up
+        if nextflow_repo_profile:
+            validation_cmd_post_vol.extend(["-profile", nextflow_repo_profile])
         
         validation_cmd_post_vol_resume = [ *validation_cmd_post_vol , '-resume' ]
         
