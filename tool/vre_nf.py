@@ -628,14 +628,13 @@ class WF_RUNNER(Tool):
                 # These state files are not needed when it has worked
                 shutil.rmtree(os.path.join(workdir,'work'),True)
                 # The workflow snapshot is removed
-                os.unlink(dest_workflow_archive)
+                if not replay_workflow:
+                    os.unlink(dest_workflow_archive)
             else:
                 logger.fatal("ERROR: VRE NF evaluation failed. Exit value: "+str(retval))
 
             # Nextflow workdir is saved for further analysis
-            # but only if it is needed
-            if not replay_workflow:
-                self.packDir(workdir,dest_workdir_archive,basePackdir='nextflow-workdir')
+            self.packDir(workdir,dest_workdir_archive,basePackdir='nextflow-workdir')
                 
             shutil.rmtree(workdir,True)
         except:
