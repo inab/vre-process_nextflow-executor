@@ -528,7 +528,7 @@ class WF_RUNNER(Tool):
         
         variable_infile_params = [
             (key_name, os.path.abspath(val_path))
-            for key_name, val_path in inputs_locs
+            for key_name, val_path in inputs_locs.items()
         ]
         
         variable_outfile_params = [
