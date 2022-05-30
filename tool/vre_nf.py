@@ -72,7 +72,7 @@ class WF_RUNNER(Tool):
     
     MASKED_KEYS = { 'execution', 'project', 'description', 'nextflow_repo_uri', 'nextflow_repo_tag', 'nextflow_repo_reldir', 'nextflow_repo_profile' }
     
-    MASKED_OUT_KEYS = { 'metrics', 'tar_view', 'tar_nf_stats', 'tar_other' }
+    MASKED_OUT_KEYS = { 'metrics', 'tar_view', 'tar_nf_stats', 'tar_other', 'workflow_archive' }
     
     IMG_FILE_TYPES = {
         'png',
@@ -374,14 +374,21 @@ class WF_RUNNER(Tool):
             logger.fatal("FATAL ERROR: both 'nextflow_repo_uri' and 'nextflow_repo_tag' parameters must be defined")
             return False
         
-        if os.path.isfile(dest_workflow_archive):
+        replay_workflow = os.path.exists(dest_workflow_archive)
+        if replay_workflow:
             # If the workflow archive already exists, override all the
             # logic, as we are re-running a previous instance
-            repo_dir = self.unpackDir(dest_workflow_archive,workdir)
-            if (nextflow_repo_reldir is not None) and len(nextflow_repo_reldir) > 0:
-                workflow_dir = os.path.join(repo_dir, nextflow_repo_reldir)
-            else:
+            if os.path.isfile(dest_workflow_archive):
+                repo_dir = self.unpackDir(dest_workflow_archive, workdir)
                 workflow_dir = repo_dir
+            elif os.path.isdir(dest_workflow_archive):
+                workflow_dir = dest_workflow_archive
+            else:
+                logger.fatal("FATAL ERROR: {dest_workflow_archive} workflow path is of an unexpected kind")
+                return False
+            
+            if (nextflow_repo_reldir is not None) and len(nextflow_repo_reldir) > 0:
+                workflow_dir = os.path.join(workflow_dir, nextflow_repo_reldir)
 
             # These two values are populated from the workflow checkout info
             new_nextflow_repo_uri , new_nextflow_repo_tag , is_tainted = self.identifyRepo(workflow_dir)
@@ -398,7 +405,7 @@ class WF_RUNNER(Tool):
             try:
                 repo_dir = self.doMaterializeRepo(nextflow_repo_uri,nextflow_repo_tag)
                 logger.info("Fetched workflow: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")")
-                self.packDir(repo_dir,dest_workflow_archive,basePackdir='workflow-'+nextflow_repo_tag)
+                self.packDir(repo_dir, dest_workflow_archive, basePackdir='workflow-'+nextflow_repo_tag)
 
                 # Detecting whether the repo is tainted
                 if (nextflow_repo_reldir is not None) and len(nextflow_repo_reldir) > 0:
@@ -626,7 +633,10 @@ class WF_RUNNER(Tool):
                 logger.fatal("ERROR: VRE NF evaluation failed. Exit value: "+str(retval))
 
             # Nextflow workdir is saved for further analysis
-            self.packDir(workdir,dest_workdir_archive,basePackdir='nextflow-workdir')
+            # but only if it is needed
+            if not replay_workflow:
+                self.packDir(workdir,dest_workdir_archive,basePackdir='nextflow-workdir')
+                
             shutil.rmtree(workdir,True)
         except:
             if retval == 0:
