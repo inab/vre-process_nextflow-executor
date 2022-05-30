@@ -830,7 +830,7 @@ class WF_RUNNER(Tool):
             )
         }
 
-        if os.path.isfile(dest_workflow_archive):
+        if os.path.exists(dest_workflow_archive):
             output_files['workflow_archive'] = dest_workflow_archive
             output_metadata['workflow_archive'] = Metadata(
                 data_type="file",
