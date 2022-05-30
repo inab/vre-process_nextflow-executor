@@ -350,9 +350,11 @@ class WF_RUNNER(Tool):
 
         return retval
         
-
+    INPUT_KEY = 'input'
+    
+    # TODO: fix or remove annotation below
     @task(returns=bool, input_loc=FILE_IN, goldstandard_dir_loc=FILE_IN, assess_dir_loc=FILE_IN, public_ref_dir_loc=FILE_IN, results_loc=FILE_OUT, stats_loc=FILE_OUT, other_loc=FILE_OUT, dest_workflow_archive=FILE_OUT, isModifier=False)
-    def validate_and_assess(self, input_loc, goldstandard_dir_loc, assess_dir_loc, public_ref_dir_loc, results_loc, stats_loc, other_loc, dest_workflow_archive):  # pylint: disable=no-self-use
+    def validate_and_assess(self, inputs_locs, results_loc, stats_loc, other_loc, dest_workflow_archive):  # pylint: disable=no-self-use
         # Temporary directory is removed at the end
         # being compressed to an archive
         try:
@@ -436,8 +438,8 @@ class WF_RUNNER(Tool):
         challenges_ids = self.configuration['challenges_ids']
         participant_id = self.configuration['participant_id']
         
-        inputDir = os.path.dirname(input_loc)
-        inputBasename = os.path.basename(input_loc)
+        # inputDir = os.path.dirname(input_loc)
+        # inputBasename = os.path.basename(input_loc)
         
         # Value needed to compose the Nextflow docker call
         uid = str(os.getuid())
@@ -525,10 +527,8 @@ class WF_RUNNER(Tool):
         
         
         variable_infile_params = [
-            ('input',input_loc),
-            ('goldstandard_dir',goldstandard_dir_loc),
-            ('public_ref_dir',public_ref_dir_loc),
-            ('assess_dir',assess_dir_loc)
+            (key_name, os.path.abspath(val_path))
+            for key_name, val_path in inputs_locs
         ]
         
         variable_outfile_params = [
@@ -710,10 +710,7 @@ class WF_RUNNER(Tool):
         other_path = os.path.join(project_path,'other_files')
         
         results = self.validate_and_assess(
-            os.path.abspath(input_files["input"]),
-            os.path.abspath(input_files['goldstandard_dir']),
-            os.path.abspath(input_files['assess_dir']),
-            os.path.abspath(input_files['public_ref_dir']),
+            input_files,
             results_path,
             stats_path,
             other_path,
