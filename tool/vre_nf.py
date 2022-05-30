@@ -484,7 +484,7 @@ class WF_RUNNER(Tool):
         
         # The fixed parameters
         validation_cmd_pre_vol = [
-            "docker", "run", "--rm", "--net", "host",
+            self.docker_cmd, "run", "--rm", "--net", "host",
             "-e", "USER",
             "-e", "NXF_DEBUG",
             "-e", "TZ="+tzstring,
