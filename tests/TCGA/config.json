@@ -44,7 +44,7 @@
         },
         {
             "name": "nextflow_repo_tag",
-            "value": "9aae6b6d5dcb20774211e0cb497c43470b947509"
+            "value": "3ab56ecc823ee703039a3741f104a86dfcf4cdb6"
         },
         {
             "name": "community_id",
@@ -108,6 +108,22 @@
                 }
             }
         },
+        {
+            "name": "augmented_assess_dir",
+            "required": true,
+            "allow_multiple": false,
+            "file": {
+                "file_type": "JSON",
+                "file_path": "TCGA-test/augmented_data",
+                "data_type": "consolidated_benchmark_dataset",
+                "compressed": "null",
+                "meta_data": {
+                    "description": "Aggregation of minimal datasets ready to be used by the OEB pushing tool",
+                    "tool": "TCGA_CD",
+                    "visible": true
+                }
+            }
+		},
         {
             "name": "tar_view",
             "required": true,

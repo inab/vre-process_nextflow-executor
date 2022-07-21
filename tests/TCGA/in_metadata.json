@@ -28,7 +28,7 @@
 		"compressed": 0,
 		"taxon_id": -1,
 		"_id": "OpEBUSER5cc02033c429d_5cfa242b7b85c0.96805689",
-		"file_path": "tests/TCGA/TCGA_full_data/example_input.txt"
+		"file_path": "tests/TCGA/TCGA_full_data/All_Together.txt"
 	},
 	{
 		"user_id": "public",
