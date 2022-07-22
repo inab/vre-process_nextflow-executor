@@ -175,6 +175,8 @@ class WF_RUNNER(Tool):
                         logger.fatal(errstr)
                         raise Exception(errstr)
 
+        return docker_tag
+
     def doMaterializeRepo(self, git_uri, git_tag):
         repo_hashed_id = hashlib.sha1(git_uri.encode('utf-8')).hexdigest()
         repo_hashed_tag_id = hashlib.sha1(git_tag.encode('utf-8')).hexdigest()
@@ -235,7 +237,7 @@ class WF_RUNNER(Tool):
         nextflow_version = self.nxf_version
         try:
             with open(os.path.join(repo_tag_destdir,'nextflow.config'),"r") as nc_config:
-                pat = re.compile(r"nextflowVersion *= *['\"][>=]*([^ ]+)['\"]")
+                pat = re.compile(r"nextflowVersion *= *['\"]!?[>=]*([^ ]+)['\"]")
                 for line in nc_config:
                     matched = pat.search(line)
                     if matched:
@@ -432,7 +434,7 @@ class WF_RUNNER(Tool):
         
         # With the version, fetch the engine
         try:
-            self.fetchNextflow(nextflow_version)
+            nxf_image_tag = self.fetchNextflow(nextflow_version)
         except Exception as error:
             logger.fatal("While materializing Nextflow engine "+nextflow_version+": "+type(error).__name__ + ': '+str(error))
             return False
@@ -498,7 +500,7 @@ class WF_RUNNER(Tool):
         
         validation_cmd_post_vol = [
             "-w", workdir,
-            self.nxf_image+":"+self.nxf_version,
+            nxf_image_tag,
             "nextflow", "run", workflow_dir,
             "-executor.\\$local.cpus={0}".format(self.max_cpus),
         ]
@@ -643,7 +645,7 @@ class WF_RUNNER(Tool):
         
         return retval == 0
 
-    def run(self, input_files, input_metadata, output_files):
+    def run(self, input_files, input_metadata, output_files, output_metadata):
         """
         The main function to run the compute_metrics tool
 
@@ -745,7 +747,13 @@ class WF_RUNNER(Tool):
         # Preparing the expected outputs
         if os.path.exists(stats_path):
             self.packDir(stats_path,tar_nf_stats_path,'nextflow-stats')
-        
+       
+        input__metadata = input_metadata["input"]
+        if isinstance(input__metadata, list):
+            # Assuming it is a two list element
+            input__metadata = input__metadata[1]
+        assert isinstance(input__metadata, Metadata), "Mismatch between OpenVRE library and implementation"
+        input__file_path = input__metadata.file_path
         # Initializing
         images_file_paths = []
         images_metadata = {
@@ -756,7 +764,7 @@ class WF_RUNNER(Tool):
                 file_type="IMG",
                 file_path=images_file_paths,
                 # Reference and golden data set paths should also be here
-                sources=[input_metadata["input"].file_path],
+                sources=[input__file_path],
                 meta_data={
                     "tool": "VRE_NF_RUNNER"
                 }
@@ -779,7 +787,7 @@ class WF_RUNNER(Tool):
                         images_file_paths.append(new_file_path)
         
         # BEWARE: Order DOES MATTER when there is a dependency from one output on another
-        output_metadata = {
+        output_metadata_ret = {
             "metrics": Metadata(
                 # These ones are already known by the platform
                 # so comment them by now
@@ -787,7 +795,7 @@ class WF_RUNNER(Tool):
                 file_type="JSON",
                 file_path=metrics_path,
                 # Reference and golden data set paths should also be here
-                sources=[input_metadata["input"].file_path],
+                sources=[input__file_path],
                 meta_data={
                     "tool": "VRE_NF_RUNNER"
                 }
@@ -799,7 +807,7 @@ class WF_RUNNER(Tool):
                 file_type="TAR",
                 file_path=tar_view_path,
                 # Reference and golden data set paths should also be here
-                sources=[input_metadata["input"].file_path],
+                sources=[input__file_path],
                 meta_data={
                     "tool": "VRE_NF_RUNNER"
                 }
@@ -811,7 +819,7 @@ class WF_RUNNER(Tool):
                 file_type="TAR",
                 file_path=tar_nf_stats_path,
                 # Reference and golden data set paths should also be here
-                sources=[input_metadata["input"].file_path],
+                sources=[input__file_path],
                 meta_data={
                     "tool": "VRE_NF_RUNNER"
                 }
@@ -823,7 +831,7 @@ class WF_RUNNER(Tool):
                 file_type="TAR",
                 file_path=tar_other_path,
                 # Reference and golden data set paths should also be here
-                sources=[input_metadata["input"].file_path],
+                sources=[input__file_path],
                 meta_data={
                     "tool": "VRE_NF_RUNNER"
                 }
@@ -832,7 +840,7 @@ class WF_RUNNER(Tool):
 
         if os.path.exists(dest_workflow_archive):
             output_files['workflow_archive'] = dest_workflow_archive
-            output_metadata['workflow_archive'] = Metadata(
+            output_metadata_ret['workflow_archive'] = Metadata(
                 data_type="file",
                 file_type="TAR",
                 file_path=dest_workflow_archive,
@@ -843,16 +851,16 @@ class WF_RUNNER(Tool):
             )
         
         # Adding the additional interesting files
-        output_metadata.update(images_metadata)
+        output_metadata_ret.update(images_metadata)
         
         # And adding "fake" entries for the other output files
         for pop_key, pop_path in self.populable_outputs.items():
-            output_metadata[pop_key] = Metadata(
+            output_metadata_ret[pop_key] = Metadata(
                 file_path = pop_path,
-                sources=[input_metadata["input"].file_path],
+                sources=[input__file_path],
                 meta_data={
                     "tool": "VRE_NF_RUNNER"
                 }
             )
         
-        return (output_files, output_metadata)
+        return (output_files, output_metadata_ret)
