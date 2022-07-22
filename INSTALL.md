@@ -40,7 +40,7 @@
     sudo apt-get -y install python3-venv
     python3 -m venv .py3Env
     source .py3Env/bin/activate
-    pip install --upgrade pip
+    pip install --upgrade pip wheel
     pip install -r requirements.txt
     ```
 
@@ -51,7 +51,7 @@
     sudo apt-get -y install virtualenv
     virtualenv -p /usr/bin/python2 .py2Env
     source .py2Env/bin/activate
-    pip install --upgrade pip
+    pip install --upgrade pip wheel
     pip install -r requirements.txt
     ```
   
