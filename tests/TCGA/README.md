@@ -1,5 +1,12 @@
-The data to be placed at `TCGA_full_data` should be
-fetched from <https://github.com/inab/TCGA_benchmarking_workflow/tree/master/TCGA_sample_data>
+In order to fetch the dataset used for this test you have to run
+`.materialize.sh` script, like:
+
+```bash
+./materialize.sh
+```
+
+The data will be placed at `TCGA_full_data`, fetched from
+<https://github.com/inab/TCGA_benchmarking_workflow/tree/master/TCGA_sample_data>
 
 The data of that remote resource has been derived from the materials of next manuscript:
 
