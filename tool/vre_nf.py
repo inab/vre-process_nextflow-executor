@@ -237,11 +237,16 @@ class WF_RUNNER(Tool):
         nextflow_version = self.nxf_version
         try:
             with open(os.path.join(repo_tag_destdir,'nextflow.config'),"r") as nc_config:
-                pat = re.compile(r"nextflowVersion *= *['\"]!?[>=]*([^ ]+)['\"]")
+                pat = re.compile(r"nextflowVersion *= *['\"](!?[>=]*)([^ ]+)['\"]")
                 for line in nc_config:
                     matched = pat.search(line)
                     if matched:
-                        nextflow_version = matched.group(1)
+                        new_nextflow_version = matched.group(2)
+                        modifier = matched.group(1)
+                        if len(modifier) > 0 and modifier[0] == '!':
+                            nextflow_version = new_nextflow_version
+                        elif new_nextflow_version >= nextflow_version:
+                            nextflow_version = new_nextflow_version
                         break
         except:
             pass
