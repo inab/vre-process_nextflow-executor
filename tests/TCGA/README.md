@@ -1,5 +1,5 @@
 In order to fetch the dataset used for this test you have to run
-`.materialize.sh` script, like:
+`materialize-data.sh` script, like:
 
 ```bash
 ./materialize-data.sh
