@@ -95,7 +95,7 @@ def main_json(config, in_metadata, out_metadata):
     two json files: config.json and input_metadata.json.
     """
     # 1. Instantiate and launch the App
-    logger.info("1. Instantiate and launch the App")
+    logger.info("I. Instantiate and launch the App")
     from apps.jsonapp import JSONApp
     app = JSONApp()
     
@@ -119,7 +119,7 @@ def main_json(config, in_metadata, out_metadata):
                         out_metadata)
 
     # 2. The App has finished
-    logger.info("2. Execution finished; see " + out_metadata)
+    logger.info("II. Execution finished; see " + out_metadata)
 
     return result
 
