@@ -499,16 +499,25 @@ class WF_RUNNER(Tool):
             "-e", "NXF_ASSETS="+nxf_assets_dir,
             "-e", "NXF_USRMAP="+uid,
             #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z -v "+project_path+":"+project_path+":rw,rprivate,z",
-            "-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z",
+            #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z",
             "-v", "/var/run/docker.sock:/var/run/docker.sock:rw,rprivate,z"
         ]
         
+        vre_wf_setup_file = os.path.join(workdir, 'vre-wf-setup.config')
         validation_cmd_post_vol = [
             "-w", workdir,
             nxf_image_tag,
-            "nextflow", "run", workflow_dir,
-            "-executor.\\$local.cpus={0}".format(self.max_cpus),
+            "nextflow",
+            "run", workflow_dir,
+            "-c", vre_wf_setup_file,
         ]
+        
+        with open(vre_wf_setup_file, mode="w", encoding="utf-8") as vF:
+            print("""docker.enabled = true
+docker.runOptions = " -u {0}:{1} -e HOME={2} -e TZ={3} -v {4}:{4}:rw,rprivate,z "
+executor.$local.cpus = {5}
+""".format(uid, gid, homedir, tzstring, workdir, self.max_cpus), file=vF)
+        
         # Use profiles only when they are set up
         if nextflow_repo_profile:
             validation_cmd_post_vol.extend(["-profile", nextflow_repo_profile])
@@ -604,11 +613,31 @@ class WF_RUNNER(Tool):
         validation_params_resume.extend(validation_cmd_post_vol_resume)
         
         # Last, but not the least important
-        validation_params_flags = []
+        # put the parameters in a file
+        validation_params_dict = {}
+        leaves = []
         for param_id,param_val in variable_params:
-            validation_params_flags.append("--" + param_id)
-            validation_params_flags.append(param_val)
-
+            node = validation_params_dict
+            splitted_path = param_id.split('.')
+            for step in splitted_path[:-1]:
+                node = node.setdefault(step,{})
+            
+            param_key = splitted_path[-1]
+            add_to_leaves = param_key not in node
+            node.setdefault(param_key, []).append(param_val)
+            if add_to_leaves:
+                leaves.append((node, param_key))
+        
+        # Postprocessing of leaves, so single elements are not represented as arrays
+        for node, param_key in leaves:
+            if len(node[param_key]) == 1:
+                node[param_key] = node[param_key][0]
+        
+        params_file = os.path.join(workdir, 'params-file.json')
+        with open(params_file, mode="w", encoding="utf-8") as pF:
+            json.dump(validation_params_dict, pF, indent=4)
+        validation_params_flags = [ "-params-file", params_file ]
+        
         validation_params.extend(validation_params_flags)
         validation_params_resume.extend(validation_params_flags)
         
