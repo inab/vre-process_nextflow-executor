@@ -1,1 +1,0 @@
-In order to get the reference data for this workflow go to https://github.com/qfo/benchmark-webservice/tree/elixir and run the ['build_refset_volumes](https://github.com/qfo/benchmark-webservice/blob/elixir/build_refset_volumes.sh) script. Then copy the resulting files to the a reference data directory within this one.

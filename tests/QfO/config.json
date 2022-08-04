@@ -40,11 +40,11 @@
         },
         {
             "name": "nextflow_repo_uri",
-            "value": "https://github.com/javi-gv94/benchmark-webservice"
+            "value": "https://github.com/jmfernandez/benchmark-webservice.git"
         },
         {
             "name": "nextflow_repo_tag",
-            "value": "7a45bb154697902b17549457cf0452e3f18f174e"
+            "value": "4da3128a1ab3901b6eddcaf14599b23b9700f909"
         },
         {
             "name": "community_id",

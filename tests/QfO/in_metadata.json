@@ -28,7 +28,7 @@
 		"compressed": 0,
 		"taxon_id": -1,
 		"_id": "OpEBUSER5cc02033c429d_5cfa242b7b85c0.96805689",
-		"file_path": "tests/QfO/data/input/SonicParanoid_default.rels.raw.gz"
+		"file_path": "tests/QfO/input_dataset/SonicParanoid_valid.rels.raw.gz"
 	},
 	{
 		"user_id": "public",
@@ -39,7 +39,7 @@
 		"taxon_id": -1,
 		"_id": "OpEBUSER5cc02033c429d_5d0357aad8b012.32264679_dummy",
 		"type": "dir",
-		"file_path": "tests/QfO/data/reference_data"
+		"file_path": "tests/QfO/reference_datasets"
 	},
 	{
 		"user_id": "public",
