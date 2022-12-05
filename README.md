@@ -67,13 +67,30 @@ declared or commented.
 If you want to test your own benchmarking workflow before deploying it
 to OpenEBench VRE, you can use the script [test_VRE_NF_RUNNER.sh](test_VRE_NF_RUNNER.sh).
 
+The currently available tests are the different subdirectories at
+[tests](tests) directory. Each subdirectory has a `README.md` file
+describing how to materialize the needed datasets and containers for that 
+specific test. Usually, they are in the form of `materialize-data.sh` and
+`materialize-containers.sh` scripts, which should be run from within the
+test directory.
+
+Next commands (which should be run once) show how to materialize both the containers and datasets needed by the [TCGA test](tests/TCGA):
+
 ```bash
-./test_VRE_NF_RUNNER.sh QfO
+cd tests/TCGA
+bash ./materialize-data.sh
+bash ./materialize-containers.sh
 ```
 
-which will create a fake project directory at `QfO-test`, and it will use
+Next command shows how run the tests from TCGA example:
+
+```bash
+./test_VRE_NF_RUNNER.sh TCGA
+```
+
+which will create a fake project directory at `TCGA-test`, and it will use
 the files `config.json` and `in_metadata.json` from the directory
-[tests/QfO] to read the parameters, inputs and expected outputs, and the
+[tests/TCGA] to read the parameters, inputs and expected outputs, and the
 relative or absolute path of the input files and directories. Relative paths
 are interpreted from the very same directory where the script is run.
 Both JSON files follow the very same format OpenVRE uses.
