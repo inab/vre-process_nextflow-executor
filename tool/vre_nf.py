@@ -497,6 +497,7 @@ class WF_RUNNER(Tool):
             "-e", "TZ="+tzstring,
             "-e", "HOME="+homedir,
             "-e", "NXF_ASSETS="+nxf_assets_dir,
+            "-e", "NXF_HOME=" + os.path.join(workdir, ".nextflow"),
             "-e", "NXF_USRMAP="+uid,
             #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z -v "+project_path+":"+project_path+":rw,rprivate,z",
             #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z",
