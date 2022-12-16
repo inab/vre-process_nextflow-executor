@@ -801,7 +801,7 @@ executor.$local.cpus = {5}
                 # Reference and golden data set paths should also be here
                 sources=[input__file_path],
                 meta_data={
-                    "tool": "VRE_NF_RUNNER"
+                    "runner": "VRE_NF_RUNNER"
                 }
             )
         }
@@ -832,7 +832,7 @@ executor.$local.cpus = {5}
                 # Reference and golden data set paths should also be here
                 sources=[input__file_path],
                 meta_data={
-                    "tool": "VRE_NF_RUNNER"
+                    "runner": "VRE_NF_RUNNER"
                 }
             ),
             "tar_view": Metadata(
@@ -844,7 +844,7 @@ executor.$local.cpus = {5}
                 # Reference and golden data set paths should also be here
                 sources=[input__file_path],
                 meta_data={
-                    "tool": "VRE_NF_RUNNER"
+                    "runner": "VRE_NF_RUNNER"
                 }
             ),
             "tar_nf_stats": Metadata(
@@ -856,7 +856,7 @@ executor.$local.cpus = {5}
                 # Reference and golden data set paths should also be here
                 sources=[input__file_path],
                 meta_data={
-                    "tool": "VRE_NF_RUNNER"
+                    "runner": "VRE_NF_RUNNER"
                 }
             ),
             "tar_other": Metadata(
@@ -868,7 +868,7 @@ executor.$local.cpus = {5}
                 # Reference and golden data set paths should also be here
                 sources=[input__file_path],
                 meta_data={
-                    "tool": "VRE_NF_RUNNER"
+                    "runner": "VRE_NF_RUNNER"
                 }
             )
         }
@@ -880,7 +880,7 @@ executor.$local.cpus = {5}
                 file_type="TAR",
                 file_path=dest_workflow_archive,
                 meta_data={
-                    "tool": "VRE_NF_RUNNER",
+                    "runner": "VRE_NF_RUNNER",
                     "visible": False
                 }
             )
@@ -894,7 +894,7 @@ executor.$local.cpus = {5}
                 file_path = pop_path,
                 sources=[input__file_path],
                 meta_data={
-                    "tool": "VRE_NF_RUNNER"
+                    "runner": "VRE_NF_RUNNER"
                 }
             )
         
