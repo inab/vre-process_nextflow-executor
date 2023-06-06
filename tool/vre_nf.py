@@ -340,8 +340,10 @@ class WF_RUNNER(Tool):
         #        f.write(unicode(jdata,"utf-8"))
         
         # And create the MuG/VRE tar file
-        with tarfile.open(destTarFile,mode='w:gz',bufsize=1024*1024) as tar:
-            tar.add(resultsDir,arcname=basePackdir,recursive=True)
+        #with tarfile.open(destTarFile,mode='w:gz',bufsize=25*1024*1024) as tar:
+        #    tar.add(resultsDir,arcname=basePackdir,recursive=True)
+
+        subprocess.run(["tar", "--transform", f"s#{resultsDir.lstrip('/')}#{basePackdir}#", "-c","-z","-f", destTarFile,resultsDir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # Unpacks an archive to a given directory, and it returns the
     # composed path of the first entry, if it is a directory, or
