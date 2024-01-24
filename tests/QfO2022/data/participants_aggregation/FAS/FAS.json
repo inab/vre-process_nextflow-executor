@@ -1,0 +1,151 @@
+{
+    "_id": "QfO:FAS_agg",
+    "challenge_ids": [
+        "FAS"
+    ],
+    "datalink": {
+        "inline_data": {
+            "challenge_participants": [
+                {
+                    "metric_x": 3570083.0,
+                    "metric_y": 0.7973545243060162,
+                    "participant_id": "OrthoFFGC",
+                    "stderr_x": 0,
+                    "stderr_y": 0.0002106257620182459
+                },
+                {
+                    "metric_x": 4895067.0,
+                    "metric_y": 0.7659265526428954,
+                    "participant_id": "Panther_LDO",
+                    "stderr_x": 0,
+                    "stderr_y": 7.985710266629616e-05
+                },
+                {
+                    "metric_x": 10160443.0,
+                    "metric_y": 0.7646447568419972,
+                    "participant_id": "InParanoid5",
+                    "stderr_x": 0,
+                    "stderr_y": 5.243359153134484e-05
+                },
+                {
+                    "metric_x": 10896858.0,
+                    "metric_y": 0.668379514607857,
+                    "participant_id": "FastOMA_0.1.4",
+                    "stderr_x": 0,
+                    "stderr_y": 0.001513165501918971
+                },
+                {
+                    "metric_x": 53995647.0,
+                    "metric_y": 0.4137441616377309,
+                    "participant_id": "OMA_HOGs",
+                    "stderr_x": 0,
+                    "stderr_y": 0.0028616940561107663
+                },
+                {
+                    "metric_x": 19005189.0,
+                    "metric_y": 0.7079994700994734,
+                    "participant_id": "SonicParanoid2-sens",
+                    "stderr_x": 0,
+                    "stderr_y": 0.0007062668597602862
+                },
+                {
+                    "metric_x": 17187213.0,
+                    "metric_y": 0.7121395595498459,
+                    "participant_id": "Panther_(all)",
+                    "stderr_x": 0,
+                    "stderr_y": 0.0007269161774563096
+                },
+                {
+                    "metric_x": 8620380.0,
+                    "metric_y": 0.7731654437979021,
+                    "participant_id": "Hieranoid_2",
+                    "stderr_x": 0,
+                    "stderr_y": 0.0003521554692467395
+                },
+                {
+                    "metric_x": 5477582.0,
+                    "metric_y": 0.7741198864110537,
+                    "participant_id": "BBH",
+                    "stderr_x": 0,
+                    "stderr_y": 0.00014316505003679898
+                },
+                {
+                    "metric_x": 8215871.0,
+                    "metric_y": 0.7239352081088257,
+                    "participant_id": "MetaPhOrs",
+                    "stderr_x": 0,
+                    "stderr_y": 0.0007739082877815776
+                },
+                {
+                    "metric_x": 10552812.0,
+                    "metric_y": 0.7431008726066521,
+                    "participant_id": "OrthoInspector_3.5",
+                    "stderr_x": 0,
+                    "stderr_y": 0.00023438039713768227
+                },
+                {
+                    "metric_x": 9866483.0,
+                    "metric_y": 0.7301099352334893,
+                    "participant_id": "PhylomeDB_v5",
+                    "stderr_x": 0,
+                    "stderr_y": 0.0004917227179296715
+                },
+                {
+                    "metric_x": 9018791.0,
+                    "metric_y": 0.8096099539471254,
+                    "participant_id": "OMA_Pairs",
+                    "stderr_x": 0,
+                    "stderr_y": 0.0003578135140782974
+                },
+                {
+                    "metric_x": 27803099.0,
+                    "metric_y": 0.6524902263216833,
+                    "participant_id": "Ensembl_Compara",
+                    "stderr_x": 0,
+                    "stderr_y": 0.001719940770671116
+                },
+                {
+                    "metric_x": 13691388.0,
+                    "metric_y": 0.7163227904464083,
+                    "participant_id": "OrthoFinder",
+                    "stderr_x": 0,
+                    "stderr_y": 0.0006011796881136168
+                },
+                {
+                    "metric_x": 15340329.0,
+                    "metric_y": 0.6930421940474205,
+                    "participant_id": "SonicParanid2-sens-g",
+                    "stderr_x": 0,
+                    "stderr_y": 8.686279151656962e-05
+                },
+                {
+                    "metric_x": 13098125.0,
+                    "metric_y": 0.7396984021633093,
+                    "participant_id": "Domainoid+",
+                    "stderr_x": 0,
+                    "stderr_y": 0.0004216023984050727
+                },
+                {
+                    "metric_x": 3432896.0,
+                    "metric_y": 0.8208606397968987,
+                    "participant_id": "OMA_Groups",
+                    "stderr_x": 0,
+                    "stderr_y": 0.00011983142056982411
+                },
+                {
+                    "metric_x": 5554618.0,
+                    "metric_y": 0.7540696013570287,
+                    "participant_id": "RSD",
+                    "stderr_x": 0,
+                    "stderr_y": 0.00045188827735973897
+                }
+            ],
+            "visualization": {
+                "type": "2D-plot",
+                "x_axis": "NR_ORTHOLOGS",
+                "y_axis": "FAS"
+            }
+        }
+    },
+    "type": "aggregation"
+}

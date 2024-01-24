@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DOCKER_TAG=2022.0.1
+DOCKER_TAG=2022.1
 
 scriptdir="$(dirname "$0")"
 case "$scriptdir" in

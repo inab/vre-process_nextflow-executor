@@ -44,7 +44,7 @@
         },
         {
             "name": "nextflow_repo_tag",
-            "value": "63f91ea7c13115c29068a973ec96443151af497a"
+            "value": "35e5bc8248183f506f2b88385d5f9a56d5b60589"
         },
         {
             "name": "community_id",
@@ -52,7 +52,7 @@
         },
         {
             "name": "challenges_ids",
-            "value": "GO EC SwissTrees"
+            "value": "GO EC VGNC SwissTrees TreeFam-A STD_Eukaryota STD_Fungi STD_Bacteria G_STD2_Luca G_STD2_Fungi G_STD2_Eukaryota G_STD2_Vertebrata FAS"
         },
         {
             "name": "participant_id",

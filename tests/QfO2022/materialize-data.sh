@@ -27,6 +27,7 @@ cleanup() {
 		chmod -R u+w "${repodir}"
 		rm -rf "${repodir}"
 	fi
+	set -e
 }
 trap cleanup EXIT ERR
 

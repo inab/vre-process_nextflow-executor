@@ -343,5 +343,29 @@
             "SonicParanoid_default",
             "SonicParanoid_most"
         ]
+    },
+    {
+        "id": "FAS",
+        "participants": [
+            "OrthoFFGC",
+            "Panther_LDO",
+            "InParanoid5",
+            "FastOMA_0.1.4",
+            "OMA_HOGs",
+            "SonicParanoid2-sens",
+            "Panther_(all)",
+            "Hieranoid_2",
+            "BBH",
+            "MetaPhOrs",
+            "OrthoInspector_3.5",
+            "PhylomeDB_v5",
+            "OMA_Pairs",
+            "Ensembl_Compara",
+            "OrthoFinder",
+            "SonicParanid2-sens-g",
+            "Domainoid+",
+            "OMA_Groups",
+            "RSD"
+        ]
     }
 ]
