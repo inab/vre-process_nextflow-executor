@@ -439,6 +439,11 @@ class WF_RUNNER(Tool):
         nextflow_version = self.guessNextflowVersion(workflow_dir)
         logger.info("Nextflow engine to be used: "+nextflow_version)
         
+        nextflow_version_tuple = tuple(nextflow_version.split("."))
+        
+        # It is needed at least with version 20.07.1
+        do_workdir_include_vol = nextflow_version_tuple < ("21", "04")
+        
         # With the version, fetch the engine
         try:
             nxf_image_tag = self.fetchNextflow(nextflow_version)
@@ -481,10 +486,10 @@ class WF_RUNNER(Tool):
         
         # Directories required by Nextflow in a Docker
         homedir = os.path.expanduser("~")
-        nxf_assets_dir = os.path.join(workdir,".nextflow","assets")
-        if not os.path.exists(nxf_assets_dir):
+        nxf_home_dir = os.path.join(homedir, "NXF_HOMES", nextflow_version, ".nextflow")
+        if not os.path.exists(nxf_home_dir):
             try:
-                os.makedirs(nxf_assets_dir)
+                os.makedirs(nxf_home_dir, exist_ok=True)
             except Exception as error:
                 logger.fatal("ERROR: Unable to create nextflow assets directory. Error: "+str(error))
                 return False
@@ -498,8 +503,7 @@ class WF_RUNNER(Tool):
             "-e", "NXF_DEBUG",
             "-e", "TZ="+tzstring,
             "-e", "HOME="+homedir,
-            "-e", "NXF_ASSETS="+nxf_assets_dir,
-            "-e", "NXF_HOME=" + os.path.join(workdir, ".nextflow"),
+            "-e", "NXF_HOME=" + nxf_home_dir,
             "-e", "NXF_USRMAP="+uid,
             #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z -v "+project_path+":"+project_path+":rw,rprivate,z",
             #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z",
@@ -516,10 +520,14 @@ class WF_RUNNER(Tool):
         ]
         
         with open(vre_wf_setup_file, mode="w", encoding="utf-8") as vF:
+            if do_workdir_include_vol:
+                workdir_vol = "-v {0}:{0}:rw,rprivate,z ".format(workdir)
+            else:
+                workdir_vol = ""
             print("""docker.enabled = true
-docker.runOptions = " -u {0}:{1} -e HOME={2} -e TZ={3} -v {4}:{4}:rw,rprivate,z "
+docker.runOptions = " -u {0}:{1} -e HOME={2} -e TZ={3} {4}"
 executor.$local.cpus = {5}
-""".format(uid, gid, homedir, tzstring, workdir, self.max_cpus), file=vF)
+""".format(uid, gid, homedir, tzstring, workdir_vol, self.max_cpus), file=vF)
         
         # Use profiles only when they are set up
         if nextflow_repo_profile:
@@ -534,7 +542,7 @@ executor.$local.cpus = {5}
         # to generate the volume parameters
         volumes = [
             (homedir+'/',"ro,rprivate,z"),
-        #    (nxf_assets_dir,"rprivate,z"),
+            (nxf_home_dir + "/","rw,rprivate,z"),
             (workdir+'/',"rw,rprivate,z"),
             (project_path+'/',"rw,rprivate,z"),
             (workflow_dir+'/',"ro,rprivate,z")
@@ -559,12 +567,14 @@ executor.$local.cpus = {5}
         
         variable_outfile_params = [
             ('statsdir',stats_loc+'/'),
-            ('outdir',results_loc+'/'),
+            ('results_dir',results_loc+'/'),
+            ('outdir',results_loc+'/results/'),
             ('otherdir',other_loc+'/')
         ]
         
         # The list of populable outputs
         variable_outfile_params.extend(self.populable_outputs.items())
+        logger.warning(json.dumps(variable_outfile_params, indent=4))
         
         # Preparing the RO volumes
         for ro_loc_id,ro_loc_val in variable_infile_params:
@@ -704,6 +714,10 @@ executor.$local.cpus = {5}
         """
         
         
+        logger.warning("Output files")
+        logger.warning("{0}",json.dumps(output_files, indent=4))
+        logger.warning("Output metadata")
+        logger.warning("{0}",json.dumps(output_metadata, indent=4))
         project_path = os.path.abspath(self.configuration.get('project','.'))
         for key in output_files.keys():
             if key not in self.MASKED_OUT_KEYS:
