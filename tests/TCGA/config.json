@@ -28,11 +28,11 @@
     "arguments": [
         {
             "name": "execution",
-            "value": "TCGA-test"
+            "value": "test-results/TCGA"
         },
         {
             "name": "project",
-            "value": "TCGA-test"
+            "value": "."
         },
         {
             "name": "description",
@@ -67,7 +67,7 @@
             "file": {
                 "file_type": "JSON",
                 "data_type": "validated_participant",
-                "file_path": "TCGA-test/validated-participant-data.json",
+                "file_path": "validated-participant-data.json",
                 "compressed": "null",
                 "meta_data": {
                     "description": "Benchmarking data model minimal participant dataset",
@@ -82,7 +82,7 @@
             "allow_multiple": false,
             "file": {
                 "file_type": "JSON",
-                "file_path": "TCGA-test/Assessment_datasets.json",
+                "file_path": "Assessment_datasets.json",
                 "data_type": "assessment",
                 "compressed": "null",
                 "meta_data": {
@@ -98,7 +98,7 @@
             "allow_multiple": false,
             "file": {
                 "file_type": "JSON",
-                "file_path": "TCGA-test/consolidated_results.json",
+                "file_path": "consolidated_results.json",
                 "data_type": "consolidated_benchmark_dataset",
                 "compressed": "null",
                 "meta_data": {
@@ -114,7 +114,7 @@
             "allow_multiple": false,
             "file": {
                 "file_type": "JSON",
-                "file_path": "TCGA-test/augmented_data",
+                "file_path": "augmented_data",
                 "data_type": "consolidated_benchmark_dataset",
                 "compressed": "null",
                 "meta_data": {

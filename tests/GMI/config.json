@@ -28,11 +28,11 @@
     "arguments": [
         {
             "name": "execution",
-            "value": "GMI-test"
+            "value": "test-results/GMI"
         },
         {
             "name": "project",
-            "value": "GMI-test"
+            "value": "."
         },
         {
             "name": "description",

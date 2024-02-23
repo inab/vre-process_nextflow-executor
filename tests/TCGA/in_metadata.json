@@ -28,7 +28,7 @@
 		"compressed": 0,
 		"taxon_id": -1,
 		"_id": "OpEBUSER5cc02033c429d_5cfa242b7b85c0.96805689",
-		"file_path": "tests/TCGA/TCGA_full_data/All_Together.txt"
+		"file_path": "TCGA_full_data/All_Together.txt"
 	},
 	{
 		"user_id": "public",
@@ -39,7 +39,7 @@
 		"taxon_id": -1,
 		"_id": "OpEBUSER5cc02033c429d_5d0357aad8b012.32264679_dummy",
 		"type": "dir",
-		"file_path": "tests/TCGA/TCGA_full_data/metrics_ref_datasets"
+		"file_path": "TCGA_full_data/metrics_ref_datasets"
 	},
 	{
 		"user_id": "public",
@@ -50,7 +50,7 @@
 		"taxon_id": -1,
 		"_id": "OpEBUSER5cc02033c429d_5d0357aad8b974.28339324_dummy",
 		"type": "dir",
-		"file_path": "tests/TCGA/TCGA_full_data/data"
+		"file_path": "TCGA_full_data/data"
 	},
 	{
 		"user_id": "public",
@@ -61,6 +61,6 @@
 		"taxon_id": -1,
 		"_id": "OpEBUSER5cc02033c429d_5d0357aad8c180.12103256_dummy",
 		"type": "dir",
-		"file_path": "tests/TCGA/TCGA_full_data/public_ref"
+		"file_path": "TCGA_full_data/public_ref"
 	}
 ]
