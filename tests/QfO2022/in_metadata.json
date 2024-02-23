@@ -29,7 +29,7 @@
 		"taxon_id": -1,
 		"_id": "OpEBUSER5cc02033c429d_5cfa242b7b85c0.96805689",
 		"file_path_orig": "tests/QfO2022/input_dataset/oma-groups.orthoxml.gz",
-		"file_path": "tests/QfO2022/input_dataset/SonicParanoid_valid.rels.raw.gz"
+		"file_path": "input_dataset/SonicParanoid_valid.rels.raw.gz"
 	},
 	{
 		"user_id": "public",
@@ -40,7 +40,7 @@
 		"taxon_id": -1,
 		"_id": "OpEBUSER5cc02033c429d_5d0357aad8b012.32264679_dummy",
 		"type": "dir",
-		"file_path": "tests/QfO2022/reference_datasets"
+		"file_path": "reference_datasets"
 	},
 	{
 		"user_id": "public",
@@ -51,7 +51,7 @@
 		"taxon_id": -1,
 		"_id": "OpEBUSER5cc02033c429d_5d0357aad8b974.28339324_dummy",
 		"type": "dir",
-		"file_path": "tests/QfO2022/data/participants_aggregation"
+		"file_path": "data/participants_aggregation"
 	},
 	{
 		"user_id": "public",
@@ -62,6 +62,6 @@
 		"taxon_id": -1,
 		"_id": "OpEBUSER5cc02033c429d_5d0357aad8c180.12103256_dummy",
 		"type": "dir",
-		"file_path": "tests/QfO2022/data/no-where"
+		"file_path": "data/no-where"
 	}
 ]

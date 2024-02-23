@@ -367,5 +367,9 @@
             "OMA_Groups",
             "RSD"
         ]
+    },
+    {
+        "id": "VGNC",
+        "participants": []
     }
 ]
