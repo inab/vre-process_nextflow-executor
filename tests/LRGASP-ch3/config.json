@@ -1,0 +1,155 @@
+{
+  "input_files": [
+    {
+      "name": "input",
+      "value": "OpEBUSER5cffb933830d9_63f4f8f52a9176.36300671",
+      "required": true,
+      "allow_multiple": false
+    },
+    {
+      "name": "goldstandard_dir",
+      "value": "OpEBUSER5cffb933830d9_65ca213c46e031.49052173_dummy",
+      "required": true,
+      "allow_multiple": false
+    },
+    {
+      "name": "assess_dir",
+      "value": "OpEBUSER5cffb933830d9_65ca213c48b182.88472259_dummy",
+      "required": true,
+      "allow_multiple": false
+    },
+    {
+      "name": "public_ref_dir",
+      "value": "OpEBUSER5cffb933830d9_65ca213c493a06.83569986_dummy",
+      "required": true,
+      "allow_multiple": false
+    }
+  ],
+  "arguments": [
+    {
+      "name": "execution",
+      "value": "test-results/LRGASP-ch3"
+    },
+    {
+      "name": "project",
+      "value": "."
+    },
+    {
+      "name": "description",
+      "value": null
+    },
+    {
+      "name": "nextflow_repo_uri",
+      "value": "https://github.com/lcodo/oeb-lrgasp-challenge-3_benchmarking_workflow.git"
+    },
+    {
+      "name": "nextflow_repo_tag",
+      "value": "0e4f6e6fd8f41aa5146a1332adfe7d701cce74a7"
+    },
+    {
+      "name": "community_id",
+      "value": "OEBC010"
+    },
+    {
+      "name": "challenge_metrics",
+      "value": [
+        "mouse_Fusion"
+      ]
+    },
+    {
+      "name": "sequencing_tech",
+      "value": "cDNA-ONT-LO"
+    },
+    {
+      "name": "participant_id",
+      "value": "tessst"
+    },
+    {
+      "name": "challenges_ids",
+      "value": [
+        "mouse_Antisense_CapTrap-ONT-LO"
+      ]
+    }
+  ],
+  "output_files": [
+    {
+      "name": "assessment_results",
+      "required": true,
+      "allow_multiple": true,
+      "file": {
+        "file_type": "JSON",
+        "file_path": "assessment_datasets.json",
+        "data_type": "assessment",
+        "compressed": "null",
+        "meta_data": {
+          "description": "Metrics derivated from the given input data",
+          "tool": "CAID1",
+          "visible": true
+        }
+      }
+    },
+    {
+      "name": "data_model_export_dir",
+      "required": true,
+      "allow_multiple": true,
+      "file": {
+        "file_type": "JSON",
+        "file_path": "participant_assessments_dataset.json",
+        "data_type": "OEB_data_model",
+        "compressed": "null",
+        "meta_data": {
+          "description": "Set of JSON file ready to be pushed into OEB database",
+          "tool": "CAID1",
+          "visible": true
+        }
+      }
+    },
+    {
+        "name": "augmented_assess_dir",
+        "required": true,
+        "allow_multiple": false,
+        "file": {
+            "file_type": "JSON",
+            "file_path": "augmented_data",
+            "data_type": "consolidated_benchmark_dataset",
+            "compressed": "null",
+            "meta_data": {
+                "description": "Aggregation of minimal datasets ready to be used by the OEB pushing tool",
+                "tool": "TCGA_CD",
+                "visible": true
+            }
+        }
+    },
+    {
+      "name": "tar_view",
+      "required": true,
+      "allow_multiple": false,
+      "custom_visualizer": true,
+      "file": {
+        "file_type": "TAR",
+        "data_type": "tool_statistics",
+        "compressed": "gzip",
+        "meta_data": {
+          "description": "Data for metrics visualizer",
+          "tool": "CAID1",
+          "visible": false
+        }
+      }
+    },
+    {
+      "name": "tar_nf_stats",
+      "required": false,
+      "allow_multiple": false,
+      "file": {
+        "file_type": "TAR",
+        "data_type": "workflow_stats",
+        "compressed": "gzip",
+        "meta_data": {
+          "description": "Execution monitoring and logging data",
+          "tool": "CAID1",
+          "visible": true
+        }
+      }
+    }
+  ]
+}

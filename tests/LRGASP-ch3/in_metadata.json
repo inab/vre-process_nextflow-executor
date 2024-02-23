@@ -1,0 +1,88 @@
+[
+  {
+    "_id": "OpEBUSER5cffb933830d9_63f4f8f52a9176.36300671",
+    "type": "file",
+    "file_path": "lrgasp-challenge-3_full_data/input_data/rna.fasta",
+    "file_type": "FASTA",
+    "data_type": "participant",
+    "compressed": 0,
+    "sources": [
+      
+    ],
+    "user_id": "OpEBUSER5cffb933830d9",
+    "creation_time": {
+      "$date": {
+        "$numberLong": "1676998885000"
+      }
+    },
+    "taxon_id": -1,
+    "meta_data": {
+      "type": "file",
+      "size": 1374750,
+      "project": "__PROJ63f4f8be4883a5.95209419",
+      "parentDir": "/gpfs/VRE/userdata//OpEBUSER5cffb933830d9/OpEBUSER5cffb933830d9/__PROJ63f4f8be4883a5.95209419/uploads",
+      "expiration": {
+        "$date": {
+          "$numberLong": "1692723685000"
+        }
+      },
+      "sources": [
+        0
+      ],
+      "taxon_id": 0,
+      "input_files_job": "/gpfs/VRE/userdata//OpEBUSER5cffb933830d9/__PROJ63f4f8be4883a5.95209419/.tmp/wget_78051/.config.json",
+      "compressed": "0",
+      "validated": 1,
+      "description": "File imported from URL 'https://raw.githubusercontent.com/TianYuan-Liu/lrgasp-challenge-3_benchmarking_workflow/main/lrgasp-challenge-3_full_data/input_data/rna.fasta'",
+      "tool": "wget",
+      "visible": true,
+      "OEB_dataset_id": "OEBD00200002V8",
+      "OEB_community_ids": "OEBC002"
+    }
+  },
+  {
+    "_id": "OpEBUSER5cffb933830d9_65ca213c46e031.49052173_dummy",
+    "file_path": "lrgasp-challenge-3_full_data/goldstandard_dir",
+    "meta_data": [
+      
+    ],
+    "sources": [
+      
+    ],
+    "data_type": "configuration_file",
+    "file_type": "TAR",
+    "user_id": "public",
+    "type": "dir",
+    "taxon_id": -1
+  },
+  {
+    "_id": "OpEBUSER5cffb933830d9_65ca213c48b182.88472259_dummy",
+    "file_path": "lrgasp-challenge-3_full_data/benchmark_data",
+    "meta_data": [
+      
+    ],
+    "sources": [
+      
+    ],
+    "data_type": "configuration_file",
+    "file_type": "TAR",
+    "user_id": "public",
+    "type": "dir",
+    "taxon_id": -1
+  },
+  {
+    "_id": "OpEBUSER5cffb933830d9_65ca213c493a06.83569986_dummy",
+    "file_path": "lrgasp-challenge-3_full_data/public_ref",
+    "meta_data": [
+      
+    ],
+    "sources": [
+      
+    ],
+    "data_type": "configuration_file",
+    "file_type": "TAR",
+    "user_id": "public",
+    "type": "dir",
+    "taxon_id": -1
+  }
+]
