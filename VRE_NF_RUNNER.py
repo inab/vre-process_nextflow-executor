@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from functools import wraps # pylint: disable=unused-import
 
 import argparse
+import os
 
 from basic_modules.workflow import Workflow
 from utils import logger
@@ -112,6 +113,10 @@ def main_json(config, in_metadata, out_metadata):
     if in_fixed:
         with open(in_metadata,"w") as in_metF:
             json.dump(in_metaArr,in_metF)
+
+    ### UGLY TRICK
+    abs_config_dir = os.path.dirname(os.path.abspath(config))
+    process_WF_RUNNER.configuration[WF_RUNNER.CONFIG_DIR_KEY] = abs_config_dir
     
     result = app.launch(process_WF_RUNNER,
                         config,

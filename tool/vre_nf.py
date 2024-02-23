@@ -57,6 +57,8 @@ import tempfile
 # ------------------------------------------------------------------------------
 
 class WF_RUNNER(Tool):
+    CONFIG_DIR_KEY = "__config_dir__"
+
     """
     Tool for writing to a file
     """
@@ -70,7 +72,16 @@ class WF_RUNNER(Tool):
     DEFAULT_DOCKER_CMD='docker'
     DEFAULT_GIT_CMD='git'
     
-    MASKED_KEYS = { 'execution', 'project', 'description', 'nextflow_repo_uri', 'nextflow_repo_tag', 'nextflow_repo_reldir', 'nextflow_repo_profile' }
+    MASKED_KEYS = {
+        'execution',
+        'project',
+        'description',
+        'nextflow_repo_uri',
+        'nextflow_repo_tag',
+        'nextflow_repo_reldir',
+        'nextflow_repo_profile',
+        CONFIG_DIR_KEY,
+    }
     
     MASKED_OUT_KEYS = { 'metrics', 'tar_view', 'tar_nf_stats', 'tar_other', 'workflow_archive' }
     
@@ -123,6 +134,9 @@ class WF_RUNNER(Tool):
             configuration = {}
 
         self.configuration.update(configuration)
+
+        # This is needed to resolve relative input paths
+        self.config_dir = self.configuration.get(self.CONFIG_DIR_KEY, os.getcwd())
         # Arrays are serialized
         for k,v in self.configuration.items():
             if isinstance(v,list):
@@ -362,7 +376,7 @@ class WF_RUNNER(Tool):
     INPUT_KEY = 'input'
     
     # TODO: fix or remove annotation below
-    @task(returns=bool, input_loc=FILE_IN, goldstandard_dir_loc=FILE_IN, assess_dir_loc=FILE_IN, public_ref_dir_loc=FILE_IN, results_loc=FILE_OUT, stats_loc=FILE_OUT, other_loc=FILE_OUT, dest_workflow_archive=FILE_OUT, isModifier=False)
+    @task(returns=bool, inputs_locs=FILE_IN, goldstandard_dir_loc=FILE_IN, assess_dir_loc=FILE_IN, public_ref_dir_loc=FILE_IN, results_loc=FILE_OUT, stats_loc=FILE_OUT, other_loc=FILE_OUT, dest_workflow_archive=FILE_OUT, isModifier=False)
     def validate_and_assess(self, inputs_locs, results_loc, stats_loc, other_loc, dest_workflow_archive):  # pylint: disable=no-self-use
         # Temporary directory is removed at the end
         # being compressed to an archive
@@ -372,8 +386,15 @@ class WF_RUNNER(Tool):
             logger.fatal("ERROR: Unable to create instantiation working directory. Error: "+str(error))
             return False
         
-        # This path is badly needed
-        project_path = os.path.abspath(self.configuration.get('project','.'))
+        # These paths are badly needed
+        # This one should be used to resolve relative inputs
+        # (a relative project path is resolved against config dirname)
+        project_path = self.configuration.get('project','.')
+        if not os.path.isabs(project_path):
+            project_path = os.path.normpath(os.path.join(self.config_dir, project_path))
+        # This one should be used to resolve relative outputs
+        # (a relative execution path is resolved against working directory)
+        execution_path = os.path.abspath(self.configuration.get('execution', '.'))
 
         nextflow_repo_uri = self.configuration.get('nextflow_repo_uri')
         nextflow_repo_tag = self.configuration.get('nextflow_repo_tag')
@@ -482,7 +503,7 @@ class WF_RUNNER(Tool):
             logger.fatal("ERROR: Unable to create nextflow working directory. Error: "+str(error))
             return False
         
-        dest_workdir_archive = os.path.join(project_path,'nf-workdir.tar.gz')
+        dest_workdir_archive = os.path.join(execution_path, 'nf-workdir.tar.gz')
         
         # Directories required by Nextflow in a Docker
         homedir = os.path.expanduser("~")
@@ -505,7 +526,7 @@ class WF_RUNNER(Tool):
             "-e", "HOME="+homedir,
             "-e", "NXF_HOME=" + nxf_home_dir,
             "-e", "NXF_USRMAP="+uid,
-            #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z -v "+project_path+":"+project_path+":rw,rprivate,z",
+            #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z -v "+execution_path+":"+execution_path+":rw,rprivate,z",
             #"-e", "NXF_DOCKER_OPTS=-u "+uid+":"+gid+" -e HOME="+homedir+" -e TZ="+tzstring+" -v "+workdir+":"+workdir+":rw,rprivate,z",
             "-v", "/var/run/docker.sock:/var/run/docker.sock:rw,rprivate,z"
         ]
@@ -544,9 +565,11 @@ executor.$local.cpus = {5}
             (homedir+'/',"ro,rprivate,z"),
             (nxf_home_dir + "/","rw,rprivate,z"),
             (workdir+'/',"rw,rprivate,z"),
-            (project_path+'/',"rw,rprivate,z"),
+            (execution_path+'/',"rw,rprivate,z"),
             (workflow_dir+'/',"ro,rprivate,z")
         ]
+        if project_path != execution_path:
+            volumes.insert(0, (project_path+'/',"ro,rprivate,z"))
         
         # These are the parameters, including input and output files and directories
         
@@ -560,15 +583,28 @@ executor.$local.cpus = {5}
                 variable_params.append((conf_key,self.configuration[conf_key]))
         
         
-        variable_infile_params = [
-            (key_name, os.path.abspath(val_path))
-            for key_name, val_path in inputs_locs.items()
-        ]
+        variable_infile_params = []
+        
+        failed_parameters = []
+        for key_name, val_path in inputs_locs.items():
+            if os.path.isabs(val_path):
+                abs_val_path = val_path
+            else:
+                abs_val_path = os.path.normpath(os.path.join(project_path, val_path))
+            if not os.path.exists(abs_val_path):
+                    logger.fatal(f"Parameter {key_name} uses file {val_path} (resolved as {abs_val_path}), but it is not available")
+                    failed_parameters.append(key_name)
+            variable_infile_params.append((key_name, abs_val_path))
+
+        if len(failed_parameters) > 0:
+            errmsg = f"Files for parameters {' '.join(failed_parameters)} were not found"
+            logger.fatal(errmsg)
+            raise Exception(errmsg)
         
         variable_outfile_params = [
             ('statsdir',stats_loc+'/'),
             ('results_dir',results_loc+'/'),
-            ('outdir',results_loc+'/results/'),
+            ('outdir',results_loc + '/'),
             ('otherdir',other_loc+'/')
         ]
         
@@ -588,8 +624,8 @@ executor.$local.cpus = {5}
         
         # Preparing the RW volumes
         for rw_loc_id,rw_loc_val in variable_outfile_params:
-            # We can skip integrating subpaths of project_path
-            if os.path.commonprefix([os.path.normpath(rw_loc_val),project_path]) != project_path:
+            # We can skip integrating subpaths of execution_path
+            if os.path.commonprefix([os.path.normpath(rw_loc_val), execution_path]) != execution_path:
                 if os.path.exists(rw_loc_val):
                     if rw_loc_val.endswith('/') and os.path.isfile(rw_loc_val):
                         rw_loc_val = rw_loc_val[:-1]
@@ -718,13 +754,24 @@ executor.$local.cpus = {5}
         logger.warning("{0}",json.dumps(output_files, indent=4))
         logger.warning("Output metadata")
         logger.warning("{0}",json.dumps(output_metadata, indent=4))
-        project_path = os.path.abspath(self.configuration.get('project','.'))
+
+        # This one should be used to resolve relative inputs
+        # (a relative project path is resolved against config dirname)
+        project_path = self.configuration.get('project','.')
+        if not os.path.isabs(project_path):
+            project_path = os.path.normpath(os.path.join(self.config_dir, project_path))
+        # This one should be used to resolve relative outputs
+        # (a relative execution path is resolved against working directory)
+        execution_path = os.path.abspath(self.configuration.get('execution', '.'))
+
         for key in output_files.keys():
             if key not in self.MASKED_OUT_KEYS:
                 if output_files[key] is not None:
-                    pop_output_path = os.path.abspath(output_files[key])
+                    pop_output_path = output_files[key]
+                    if not os.path.isabs(output_files[key]):
+                        pop_output_path = os.path.normpath(os.path.join(execution_path, output_files[key]))
                 else:
-                    pop_output_path = os.path.join(project_path,uuid.uuid4().hex + '.out')
+                    pop_output_path = os.path.join(execution_path, uuid.uuid4().hex + '.out')
                 
                 # Ensuring the parent directory already exists
                 pop_output_parent_dir = os.path.dirname(pop_output_path)
@@ -737,39 +784,49 @@ executor.$local.cpus = {5}
         participant_id = self.configuration['participant_id']
         unique_results_dir = participant_id + '_' + self.timestamp_str
         
+        # Output parameter
         metrics_path = output_files.get("metrics")
         if metrics_path is None:
-            metrics_path = os.path.join(project_path,participant_id+'.json')
-        metrics_path = os.path.abspath(metrics_path)
+            metrics_path = os.path.join(execution_path, participant_id+'.json')
+        if not os.path.isabs(metrics_path):
+            metrics_path = os.path.normpath(os.path.join(execution_path, metrics_path))
         output_files['metrics'] = metrics_path
         
+        # Output parameter
         tar_view_path = output_files.get("tar_view")
         if tar_view_path is None:
-            tar_view_path = os.path.join(project_path,unique_results_dir+'.tar.gz')
-        tar_view_path = os.path.abspath(tar_view_path)
+            tar_view_path = os.path.join(execution_path, unique_results_dir+'.tar.gz')
+        if not os.path.isabs(tar_view_path):
+            tar_view_path = os.path.normpath(os.path.join(execution_path, tar_view_path))
         output_files['tar_view'] = tar_view_path
         
+        # Output parameter
         tar_nf_stats_path = output_files.get("tar_nf_stats")
         if tar_nf_stats_path is None:
-            tar_nf_stats_path = os.path.join(project_path,'nfstats.tar.gz')
-        tar_nf_stats_path = os.path.abspath(tar_nf_stats_path)
+            tar_nf_stats_path = os.path.join(execution_path, 'nfstats.tar.gz')
+        if not os.path.isabs(tar_nf_stats_path):
+            tar_nf_stats_path = os.path.normpath(os.path.join(execution_path, tar_nf_stats_path))
         output_files['tar_nf_stats'] = tar_nf_stats_path
         
+        # Output parameter
         tar_other_path = output_files.get("tar_other")
         if tar_other_path is None:
-            tar_other_path = os.path.join(project_path,'other_files.tar.gz')
-        tar_other_path = os.path.abspath(tar_other_path)
+            tar_other_path = os.path.join(execution_path, 'other_files.tar.gz')
+        if not os.path.isabs(tar_other_path):
+            tar_other_path = os.path.normpath(os.path.join(execution_path, tar_other_path))
         output_files['tar_other'] = tar_other_path
         
+        # Output parameter
         dest_workflow_archive = output_files.get("workflow_archive")
         if dest_workflow_archive is None:
-            dest_workflow_archive = os.path.join(project_path,'.workflow.tar.gz')
-        dest_workflow_archive = os.path.abspath(dest_workflow_archive)
+            dest_workflow_archive = os.path.join(execution_path, '.workflow.tar.gz')
+        if not os.path.isabs(dest_workflow_archive):
+            dest_workflow_archive = os.path.normpath(os.path.join(execution_path, dest_workflow_archive))
         
         # Defining the output directories
-        results_path = os.path.join(project_path,'results')
-        stats_path = os.path.join(project_path,'nf_stats')
-        other_path = os.path.join(project_path,'other_files')
+        results_path = os.path.join(execution_path, 'results')
+        stats_path = os.path.join(execution_path, 'nf_stats')
+        other_path = os.path.join(execution_path, 'other_files')
         
         results = self.validate_and_assess(
             input_files,
@@ -830,9 +887,9 @@ executor.$local.cpus = {5}
                 for other_file in other_files:
                     theFileType = other_file[other_file.rindex(".")+1:].lower()
                     if theFileType in self.IMG_FILE_TYPES:
-                        orig_file_path = os.path.join(other_root,other_file)
-                        new_file_path = os.path.join(project_path,other_file)
-                        shutil.copyfile(orig_file_path,new_file_path)
+                        orig_file_path = os.path.join(other_root, other_file)
+                        new_file_path = os.path.join(execution_path, other_file)
+                        shutil.copyfile(orig_file_path, new_file_path)
                         
                         # Populating
                         images_file_paths.append(new_file_path)
