@@ -38,7 +38,7 @@ git clone -n "${git_repo}" "${repodir}"
 cd "${repodir}" && git checkout "${git_tag}"
 bash materialize-containers.sh
 
-docker images --format json| jq -r 'select(.Repository | test("^lrgasp_")) | .Repository + ":" + .Tag' | while read localtag ; do
+docker images --format '{{json .}}' | jq -r 'select(.Repository | test("^lrgasp_")) | .Repository + ":" + .Tag' | while read localtag ; do
 	docker tag ${localtag} liutiantian/${localtag}
 done
 if [ "$git_tag" == "ff5c8589a4f23b317630a5c77fc55d7b99b72c3f" ] ; then
