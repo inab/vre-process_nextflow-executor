@@ -568,7 +568,7 @@ executor.$local.cpus = {5}
             (execution_path+'/',"rw,rprivate,z"),
             (workflow_dir+'/',"ro,rprivate,z")
         ]
-        if project_path != execution_path:
+        if not os.path.samefile(project_path, execution_path):
             volumes.insert(0, (project_path+'/',"ro,rprivate,z"))
         
         # These are the parameters, including input and output files and directories
