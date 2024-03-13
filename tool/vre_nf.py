@@ -389,6 +389,7 @@ class WF_RUNNER(Tool):
         # These paths are badly needed
         # This one should be used to resolve relative inputs
         # (a relative project path is resolved against config dirname)
+        do_docker_unconfined = self.configuration.get("docker_unconfined", False)
         project_path = self.configuration.get('project','.')
         if not os.path.isabs(project_path):
             project_path = os.path.normpath(os.path.join(self.config_dir, project_path))
@@ -545,10 +546,14 @@ class WF_RUNNER(Tool):
                 workdir_vol = "-v {0}:{0}:rw,rprivate,z ".format(workdir)
             else:
                 workdir_vol = ""
+            if do_docker_unconfined:
+                unconfined_docker = "--security-opt seccomp=unconfined"
+            else:
+                unconfined_docker = ""
             print("""docker.enabled = true
-docker.runOptions = " -u {0}:{1} -e HOME={2} -e TZ={3} {4}"
-executor.$local.cpus = {5}
-""".format(uid, gid, homedir, tzstring, workdir_vol, self.max_cpus), file=vF)
+docker.runOptions = " -u {0}:{1} --security-opt seccomp=unconfined -e HOME={2} -e TZ={3} {4} {5}"
+executor.$local.cpus = {6}
+""".format(uid, gid, homedir, tzstring, workdir_vol, unconfined_docker, self.max_cpus), file=vF)
         
         # Use profiles only when they are set up
         if nextflow_repo_profile:
