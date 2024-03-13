@@ -463,7 +463,7 @@ class WF_RUNNER(Tool):
         nextflow_version_tuple = tuple(nextflow_version.split("."))
         
         # It is needed at least with version 20.07.1
-        do_workdir_include_vol = nextflow_version_tuple < ("21", "04")
+        do_workdir_include_vol = nextflow_version_tuple < ("20", "07","1")
         
         # With the version, fetch the engine
         try:
