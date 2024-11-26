@@ -406,52 +406,41 @@ class WF_RUNNER(Tool):
             return False
         
         replay_workflow = os.path.exists(dest_workflow_archive)
-        if replay_workflow:
-            # If the workflow archive already exists, override all the
-            # logic, as we are re-running a previous instance
-            if os.path.isfile(dest_workflow_archive):
-                repo_dir = self.unpackDir(dest_workflow_archive, workdir)
-                workflow_dir = repo_dir
-            elif os.path.isdir(dest_workflow_archive):
-                workflow_dir = dest_workflow_archive
-            else:
-                logger.fatal("FATAL ERROR: {dest_workflow_archive} workflow path is of an unexpected kind")
-                return False
-            
-            if (nextflow_repo_reldir is not None) and len(nextflow_repo_reldir) > 0:
-                workflow_dir = os.path.join(workflow_dir, nextflow_repo_reldir)
-
-            # These two values are populated from the workflow checkout info
-            new_nextflow_repo_uri , new_nextflow_repo_tag , is_tainted = self.identifyRepo(workflow_dir)
-            logger.info("Cached workflow: "+new_nextflow_repo_uri+" ("+new_nextflow_repo_tag+")")
-
-            if new_nextflow_repo_uri!=nextflow_repo_uri or new_nextflow_repo_tag!=nextflow_repo_tag:
-                logger.warning("Cached workflow differs from requested one. \n\tExpected: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")\n\tFound: "+new_nextflow_repo_uri+" ("+new_nextflow_repo_tag+")")
-                # As we are using this copy, rewrite these variables
-                nextflow_repo_uri = new_nextflow_repo_uri
-                nextflow_repo_tag = new_nextflow_repo_tag
-        else:
+        if not replay_workflow:
             # First, we need to materialize the workflow
             # checking out the repo to be used
             try:
                 repo_dir = self.doMaterializeRepo(nextflow_repo_uri,nextflow_repo_tag)
                 logger.info("Fetched workflow: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")")
                 self.packDir(repo_dir, dest_workflow_archive, basePackdir='workflow-'+nextflow_repo_tag)
-
-                # Detecting whether the repo is tainted
-                if (nextflow_repo_reldir is not None) and len(nextflow_repo_reldir) > 0:
-                    workflow_dir = os.path.join(repo_dir, nextflow_repo_reldir)
-                else:
-                    workflow_dir = repo_dir
-                test_nextflow_repo_uri, test_nextflow_repo_tag, is_tainted = self.identifyRepo(workflow_dir)
-                if test_nextflow_repo_uri!=nextflow_repo_uri or test_nextflow_repo_tag!=nextflow_repo_tag:
-                    logger.warning("Cached repo URI and tag do not match. \n\tExpected: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")\n\tFound: "+test_nextflow_repo_uri+" ("+test_nextflow_repo_tag+")")
-                    # As we are using this copy, rewrite these variables
-                    nextflow_repo_uri = test_nextflow_repo_uri
-                    nextflow_repo_tag = test_nextflow_repo_tag
             except Exception as error:
                 logger.fatal("While materializing repo: "+type(error).__name__ + ': '+str(error))
                 return False
+
+        # If the workflow archive already exists, override all the
+        # logic, as we are re-running a previous instance
+        if os.path.isfile(dest_workflow_archive):
+            repo_dir = self.unpackDir(dest_workflow_archive, workdir)
+            workflow_dir = repo_dir
+        elif os.path.isdir(dest_workflow_archive):
+            # TODO: shutil.copytree
+            workflow_dir = dest_workflow_archive
+        else:
+            logger.fatal("FATAL ERROR: {dest_workflow_archive} workflow path is of an unexpected kind")
+            return False
+        
+        if (nextflow_repo_reldir is not None) and len(nextflow_repo_reldir) > 0:
+            workflow_dir = os.path.join(workflow_dir, nextflow_repo_reldir)
+
+        # These two values are populated from the workflow checkout info
+        new_nextflow_repo_uri , new_nextflow_repo_tag , is_tainted = self.identifyRepo(workflow_dir)
+        logger.info("Cached workflow: "+new_nextflow_repo_uri+" ("+new_nextflow_repo_tag+")")
+
+        if new_nextflow_repo_uri!=nextflow_repo_uri or new_nextflow_repo_tag!=nextflow_repo_tag:
+            logger.warning("Cached workflow differs from requested one. \n\tExpected: "+nextflow_repo_uri+" ("+nextflow_repo_tag+")\n\tFound: "+new_nextflow_repo_uri+" ("+new_nextflow_repo_tag+")")
+            # As we are using this copy, rewrite these variables
+            nextflow_repo_uri = new_nextflow_repo_uri
+            nextflow_repo_tag = new_nextflow_repo_tag
 
         logger.debug("\tLocal dir: "+workflow_dir)
         if is_tainted:
@@ -535,6 +524,7 @@ class WF_RUNNER(Tool):
         vre_wf_setup_file = os.path.join(workdir, 'vre-wf-setup.config')
         validation_cmd_post_vol = [
             "-w", workdir,
+            "--",
             nxf_image_tag,
             "nextflow",
             "run", workflow_dir,
@@ -560,12 +550,15 @@ class WF_RUNNER(Tool):
                 pval = '"' + val + '"' if " " in val else val
                 print(key + " = " + pval, file=vF)
 
-            if True:
+            if False:
                 # Trying to avoid Nextflow DSL2 issues when -c is used
                 validation_cmd_post_vol.extend([
-                    key + ('"' + val + '"' if " " in val else val)
+                    "-" + key + "=" + val
                     for key, val in setup_options.items()
                 ])
+            elif True:
+                with open(os.path.join(workflow_dir, "nextflow.config"), mode="a", encoding="utf-8") as aH:
+                    print('\nincludeConfig "{0}"'.format(vre_wf_setup_file), file=aH)
             else:
                 # This one will be enabled in the future in Nextflow versions
                 # having bugs https://github.com/nextflow-io/nextflow/issues/4626
