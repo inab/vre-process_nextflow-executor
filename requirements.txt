@@ -1,3 +1,2 @@
-pylint
 openvre-tool-api @ git+https://github.com/inab/openvre-tool-api.git@v0.5.3
 ConfigParser
