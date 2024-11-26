@@ -357,7 +357,7 @@ class WF_RUNNER(Tool):
         #with tarfile.open(destTarFile,mode='w:gz',bufsize=25*1024*1024) as tar:
         #    tar.add(resultsDir,arcname=basePackdir,recursive=True)
 
-        subprocess.run(["tar", "--transform", f"s#{resultsDir.lstrip('/')}#{basePackdir}#", "-c","-z","-f", destTarFile,resultsDir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["tar", "--transform", "s#{0}#{1}#".format(resultsDir.lstrip('/'), basePackdir), "-c","-z","-f", destTarFile,resultsDir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # Unpacks an archive to a given directory, and it returns the
     # composed path of the first entry, if it is a directory, or
@@ -538,9 +538,12 @@ class WF_RUNNER(Tool):
             nxf_image_tag,
             "nextflow",
             "run", workflow_dir,
-            "-c", vre_wf_setup_file,
         ]
         
+        setup_options: "MutableMapping[str, str]" = {
+            "docker.enabled": "true",
+            "executor.$local.cpus": str(self.max_cpus),
+        }
         with open(vre_wf_setup_file, mode="w", encoding="utf-8") as vF:
             if do_workdir_include_vol:
                 workdir_vol = "-v {0}:{0}:rw,rprivate,z ".format(workdir)
@@ -550,10 +553,26 @@ class WF_RUNNER(Tool):
                 unconfined_docker = "--security-opt seccomp=unconfined"
             else:
                 unconfined_docker = ""
-            print("""docker.enabled = true
-docker.runOptions = " -u {0}:{1} --security-opt seccomp=unconfined -e HOME={2} -e TZ={3} {4} {5}"
-executor.$local.cpus = {6}
-""".format(uid, gid, homedir, tzstring, workdir_vol, unconfined_docker, self.max_cpus), file=vF)
+            
+            runOptions = " -u {0}:{1} -e HOME={2} -e TZ={3} {4} {5}".format(uid, gid, homedir, tzstring, workdir_vol, unconfined_docker)
+            setup_options["docker.runOptions"] = runOptions
+            for key, val in setup_options.items():
+                pval = '"' + val + '"' if " " in val else val
+                print(key + " = " + pval, file=vF)
+
+            if True:
+                # Trying to avoid Nextflow DSL2 issues when -c is used
+                validation_cmd_post_vol.extend([
+                    key + ('"' + val + '"' if " " in val else val)
+                    for key, val in setup_options.items()
+                ])
+            else:
+                # This one will be enabled in the future in Nextflow versions
+                # having bugs https://github.com/nextflow-io/nextflow/issues/4626
+                # and https://github.com/nextflow-io/nextflow/issues/2662 fixed
+                validation_cmd_post_vol.extend([
+                    "-c", vre_wf_setup_file,
+                ])
         
         # Use profiles only when they are set up
         if nextflow_repo_profile:
@@ -597,12 +616,12 @@ executor.$local.cpus = {6}
             else:
                 abs_val_path = os.path.normpath(os.path.join(project_path, val_path))
             if not os.path.exists(abs_val_path):
-                    logger.fatal(f"Parameter {key_name} uses file {val_path} (resolved as {abs_val_path}), but it is not available")
+                    logger.fatal("Parameter {0} uses file {1} (resolved as {2}), but it is not available".format(key_name, val_path, abs_val_path))
                     failed_parameters.append(key_name)
             variable_infile_params.append((key_name, abs_val_path))
 
         if len(failed_parameters) > 0:
-            errmsg = f"Files for parameters {' '.join(failed_parameters)} were not found"
+            errmsg = "Files for parameters " + " ".join(failed_parameters) + " were not found"
             logger.fatal(errmsg)
             raise Exception(errmsg)
         

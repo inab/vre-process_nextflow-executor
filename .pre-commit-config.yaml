@@ -1,0 +1,44 @@
+fail_fast: true
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      # This one has been added to fail fast on syntax errors
+      # before running expensive pylint
+      - id: check-ast
+        types_or:
+          - python
+          - pyi
+        exclude: "/(site-packages|development-[^/]*|docs|node_modules|__pycache__|\\..*)/$"
+      - id: check-json
+      - id: check-yaml
+        types: [file]
+        files: \.(yaml|yml|wfex\.(stage|export|ctxt))$
+  - repo: https://github.com/koalaman/shellcheck-precommit.git
+    rev: v0.10.0
+    hooks:
+      - id: shellcheck
+        #args: [--format,json]
+        stages: [manual]
+#  - repo: local
+#    hooks:
+#      - id: pylint
+#        name: Local PyLint
+#        language: system
+#        require_serial: true
+#        types:
+#          - python
+#        exclude: "^[^/]*env/|dev-[^/]*/|docs/"
+#        entry: pylint
+#        args: [-j , "4", --source-roots, .]
+#      - id: mypy
+#        name: Local MyPy
+#        language: system
+#        types_or:
+#          - python
+#          - pyi
+#        exclude: "/(site-packages|development-[^/]*|docs|node_modules|__pycache__|\\..*)/$"
+#        require_serial: true
+#        entry: mypy
+#        args: [--strict, --show-error-codes, --no-warn-unused-ignores]
