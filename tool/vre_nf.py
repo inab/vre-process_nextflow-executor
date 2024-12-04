@@ -16,6 +16,7 @@
 """
 from __future__ import print_function
 
+import atexit
 import sys
 import os
 import re
