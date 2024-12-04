@@ -56,6 +56,9 @@ import tempfile
 
 # ------------------------------------------------------------------------------
 
+def copy2_nofollow(src, dest):
+    shutil.copy2(src, dest, follow_symlinks=False)
+
 class WF_RUNNER(Tool):
     CONFIG_DIR_KEY = "__config_dir__"
 
@@ -423,10 +426,12 @@ class WF_RUNNER(Tool):
             repo_dir = self.unpackDir(dest_workflow_archive, workdir)
             workflow_dir = repo_dir
         elif os.path.isdir(dest_workflow_archive):
-            # TODO: shutil.copytree
-            workflow_dir = dest_workflow_archive
+            repo_dir = os.path.join(workdir, ".tmp-wf-{0}_{1}".format(datetime.datetime.now().timestamp(), os.path.basename(dest_workflow_archive)))
+            atexit.register(shutil.rmtree, repo_dir)
+            shutil.copytree(dest_workflow_archive, repo_dir, copy_function=copy2_nofollow)
+            workflow_dir = repo_dir
         else:
-            logger.fatal("FATAL ERROR: {dest_workflow_archive} workflow path is of an unexpected kind")
+            logger.fatal("FATAL ERROR: {0} workflow path is of an unexpected kind".format(dest_workflow_archive))
             return False
         
         if (nextflow_repo_reldir is not None) and len(nextflow_repo_reldir) > 0:
