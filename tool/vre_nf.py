@@ -879,12 +879,20 @@ class WF_RUNNER(Tool):
         if os.path.exists(stats_path):
             self.packDir(stats_path,tar_nf_stats_path,'nextflow-stats')
        
-        input__metadata = input_metadata["input"]
-        if isinstance(input__metadata, list):
-            # Assuming it is a two list element
-            input__metadata = input__metadata[1]
-        assert isinstance(input__metadata, Metadata), "Mismatch between OpenVRE library and implementation"
-        input__file_path = input__metadata.file_path
+        input_sources: "MutableSequence[Metadata]" = []
+        
+        for key in input_metadata.keys():
+            if key.startswith("input"):
+                input__metadata = input_metadata[key]
+                if isinstance(input__metadata, list):
+                    # Assuming it is a two list element
+                    if len(input__metadata) != 2:
+                        # Skip failure
+                        continue
+                    input__metadata = input__metadata[1]
+                assert isinstance(input__metadata, Metadata), f"Mismatch between OpenVRE library and implementation (input '{key}')"
+                input_sources.append(input__metadata.file_path)        
+
         # Initializing
         images_file_paths = []
         images_metadata = {
@@ -895,7 +903,7 @@ class WF_RUNNER(Tool):
                 file_type="IMG",
                 file_path=images_file_paths,
                 # Reference and golden data set paths should also be here
-                sources=[input__file_path],
+                sources=input_sources,
                 meta_data={
                     "runner": "VRE_NF_RUNNER"
                 }
@@ -926,7 +934,7 @@ class WF_RUNNER(Tool):
                 file_type="JSON",
                 file_path=metrics_path,
                 # Reference and golden data set paths should also be here
-                sources=[input__file_path],
+                sources=input_sources,
                 meta_data={
                     "runner": "VRE_NF_RUNNER"
                 }
@@ -938,7 +946,7 @@ class WF_RUNNER(Tool):
                 file_type="TAR",
                 file_path=tar_view_path,
                 # Reference and golden data set paths should also be here
-                sources=[input__file_path],
+                sources=input_sources,
                 meta_data={
                     "runner": "VRE_NF_RUNNER"
                 }
@@ -950,7 +958,7 @@ class WF_RUNNER(Tool):
                 file_type="TAR",
                 file_path=tar_nf_stats_path,
                 # Reference and golden data set paths should also be here
-                sources=[input__file_path],
+                sources=input_sources,
                 meta_data={
                     "runner": "VRE_NF_RUNNER"
                 }
@@ -962,7 +970,7 @@ class WF_RUNNER(Tool):
                 file_type="TAR",
                 file_path=tar_other_path,
                 # Reference and golden data set paths should also be here
-                sources=[input__file_path],
+                sources=input_sources,
                 meta_data={
                     "runner": "VRE_NF_RUNNER"
                 }
@@ -988,7 +996,7 @@ class WF_RUNNER(Tool):
         for pop_key, pop_path in self.populable_outputs.items():
             output_metadata_ret[pop_key] = Metadata(
                 file_path = pop_path,
-                sources=[input__file_path],
+                sources=input_sources,
                 meta_data={
                     "runner": "VRE_NF_RUNNER"
                 }
